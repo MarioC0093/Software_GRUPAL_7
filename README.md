@@ -3,7 +3,7 @@ Práctica grupal de Software del máster de Bioestadística del mejor grupo (el 
 
 
 
-ToDo id | Text | Done
-------------- | -------------
+ToDo id  |  Text |  Done
+------------- | ------------- | -------------
 1 | cargar solo los paquetes necesarios que se usan en el quarto | 0
 Content Cell  | Content Cell
