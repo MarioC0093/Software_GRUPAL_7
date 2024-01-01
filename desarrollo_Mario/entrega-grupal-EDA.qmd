@@ -1,0 +1,226 @@
+---
+title: "entrega-grupal-EDA"
+author: "MarioC"
+format: html
+editor: visual
+---
+
+```{r}
+#Cargar librerias 
+library(tidyverse)
+library(stringi)
+library(lubridate)
+library(glue)
+library(ggthemes)
+library(showtext)
+library(ggridges)
+library(ggsci)
+library(dplyr)
+library(scales)
+library(ggparliament)
+```
+
+
+
+```{r}
+#| warning: false
+datos_elecciones <- read_csv(file = "./datos/datos_elecciones_final.csv")
+encuestas <- read_csv(file = "./datos/encuestas_final.csv")
+
+datos_elecciones <- datos_elecciones |>
+  mutate(siglas = as.factor(siglas)) |> 
+  mutate(fecha=as.factor(fecha))
+```
+
+```{r}
+#| echo: false
+glue("Tenemos {datos_elecciones |> distinct(fecha) |> pull() |> length()} elecciones diferentes.")
+```
+
+Vamos a ver el número de votos totales en cada elección y la distribución por partidos políticos
+
+```{r}
+maestra_censos <- datos_elecciones |> distinct(fecha, cod_mun, censo) |> summarise(censo=sum(censo), .by = fecha)
+
+data_1 <- datos_elecciones |>
+  summarise(votos=sum(votos), .by = c(fecha, siglas)) |> 
+  left_join(maestra_censos, by = "fecha")
+  # left_join(datos_elecciones |> distinct(fecha, cod_mun, censo) |> summarise(censo=sum(censo), .by = fecha), by = "fecha")
+
+min_votos <- data_1 |> summarise(votos=sum(votos), .by=fecha) |> 
+  summarise(min_v=min(votos)) |> pull()
+
+p_votos <- data_1 |> summarise(votos = sum(votos), .by=fecha) |> left_join(maestra_censos, by = "fecha") |> 
+  mutate(p_votos = votos/censo) |> select(p_votos) |> pull()
+```
+
+
+::: {.callout-warning}
+Ordenar partido por el más votado
+¿en las primeras elecciones? ¿se puede hacer el mas votado por cada elección?
+:::
+
+
+```{r}
+data_1 |> 
+  ggplot(aes(x=fecha, y=votos, fill=siglas))+
+  geom_col()+
+  geom_hline(yintercept=min_votos, linetype="dashed", color = "white", size=0.5)
+```
+
+
+vemos que el número de votos siempre se ha mantenido por encima de `r min_votos`
+pero, ¿cuánto ha supuesto este número de votos sobre el total de la población?
+
+Comparando con el censo para cada una de las elecciones:
+
+```{r}
+data_1 |> 
+  ggplot()+
+  geom_col(aes(x=fecha, y=votos, fill=siglas))+
+  geom_line( aes(x=fecha, y=votos / censo), size=2)+ # esto no consigo ponerlo
+  geom_hline(yintercept=min_votos, linetype="dashed", color = "white", size=0.5)+
+  scale_y_continuous(sec.axis = sec_axis(~.*1/min_votos))
+
+# sería este dato el que hay que plasmar en el gráfico anterior
+data_1 |> 
+  ggplot()+
+  geom_line( aes(x=fecha, y=votos / censo), size=2)
+```
+
+
+::: {.callout-warning}
+reordenar los factores para que no_votos salga arriba del todo
+:::
+
+
+```{r}
+data_1 |> summarise(votos=sum(votos),.by=c(fecha, censo)) |> mutate(no_votos=censo-votos) |>
+  pivot_longer(cols = c(votos, no_votos), names_to = "tipo_voto") |> 
+  ggplot() +
+  geom_col(aes(x=fecha, y=value, fill=tipo_voto), position = "fill")
+
+# ToDo: reordenar los factores para que no_votos salga arriba del todo
+data_1 |> summarise(votos=sum(votos),.by=c(fecha, censo)) |> mutate(no_votos=censo-votos) |>
+  pivot_longer(cols = c(votos, no_votos), names_to = "tipo_voto") |>
+  filter(tipo_voto=="no_votos") |> select(fecha, siglas=tipo_voto, votos=value) |>
+  rbind(data_1 |> summarise(votos=sum(votos),.by=c(fecha, siglas))) |> 
+  ggplot() +
+  geom_col(aes(x=fecha, y=votos, fill=siglas), position = "fill")
+```
+
+
+
+::: {.callout-warning}
+Los colores habría que definirlos más atrás
+:::
+
+
+::: {.callout-warning}
+pte seleccionar los colores correctos
+:::
+
+
+```{r}
+colores_elecciones <- datos_elecciones |> distinct(siglas) |> 
+  mutate(color_politico=case_when(siglas == "PP" ~ "#3399FF",	# El color corresponde al elegido en 2019
+                         # siglas == "PSOE" ~ "#FF0000",
+                         siglas == "PSOE" ~ "#F6350B",
+                         siglas == "C's" ~ "#FF5824",
+                         siglas == "PNV" ~ "#FF0000",
+                         siglas == "BNG" ~ "#FF0000",
+                         siglas == "COMPROMÍS" ~ "#FF0000",
+                         siglas == "CiU" ~ "#FF0000",
+                         siglas == "UP" ~ "#6D50B3",
+                         siglas == "ERC" ~ "#FF0000",
+                         siglas == "EH - BILDU" ~ "#FF0000",
+                         siglas == "MÁS PAÍS" ~ "#E61455",
+                         siglas == "VOX" ~ "#73B446",
+                         TRUE ~ "#462B25"))
+```
+
+
+La política nacional siempre ha sido bipartidista desde que entro la democracia a finales del siglo pasado. En los últimos años (más bien en las últimas elecciones) ha dado un giro y el bipartidismo ya se quedó atrás en las Cortes Generales.
+
+
+
+::: {.callout-warning}
+poner el filtro de la fecha en función del nivel del factor
+:::
+
+```{r}
+#ToDo: poner el filtro de la fecha como el mínimo level de ese factor
+parlamento <- datos_elecciones |> filter(fecha=="2008-03-01") |> summarise(votos=sum(votos), .by = c(fecha, siglas))
+parlamento <- parlamento |> mutate(asientos = round(350*votos/sum(votos))) |> select(-votos) |> left_join(colores_elecciones, by = "siglas")
+semicircle <- parliament_data(election_data = parlamento,
+                              type = "semicircle", # Tipo de parlamento
+                              parl_rows = 7,      # Número de filas del parlamento
+                              party_seats = parlamento$asientos) # Asientos por partido
+
+semi1 <- ggplot(semicircle, aes(x = x, y = y, colour = siglas)) +
+  geom_parliament_seats() + 
+  theme_ggparliament() +
+  labs(title = "2008-03-01") +
+  scale_colour_manual(values = semicircle$color_politico, 
+                      limits = semicircle$siglas)
+
+
+#ToDo: poner el filtro de la fecha como el mínimo level de ese factor
+parlamento <- datos_elecciones |> filter(fecha=="2019-11-01") |> summarise(votos=sum(votos), .by = c(fecha, siglas))
+parlamento <- parlamento |> mutate(asientos = round(350*votos/sum(votos))) |> select(-votos) |> left_join(colores_elecciones, by = "siglas")
+semicircle <- parliament_data(election_data = parlamento,
+                                 type = "semicircle", # Tipo de parlamento
+                                 parl_rows = 7,      # Número de filas del parlamento
+                                 party_seats = parlamento$asientos) # Asientos por partido
+
+semi2 <- ggplot(semicircle, aes(x = x, y = y, colour = siglas)) +
+  geom_parliament_seats() + 
+  theme_ggparliament() +
+  labs(title = "2019-11-01") +
+  scale_colour_manual(values = semicircle$color_politico, 
+                      limits = semicircle$siglas)
+```
+
+
+::: {.callout-note}
+ejecutar el siguiente scrip a ver si funciona con vuestra versiones de R
+:::
+
+
+```{r}
+require(gridExtra)
+# grid.arrange(semi1, semi2, nrow=2, common.legend = TRUE, legend="bottom")
+# da error el common.legend
+```
+
+```{r}
+#| results: asis hold
+par(mfrow = c(2, 1))
+semi1+theme(legend.position = "bottom"); semi2+theme(legend.position = "none")
+par(mfrow = c(1, 1))
+```
+
+
+```{r}
+a <- datos_elecciones |> mutate(provincia=substring(cod_mun,4,5)) |> filter(provincia=="28" | provincia=="08") |> 
+   mutate(bipartidismo = if_else(siglas %in% c("PP","PSOE"),1,0)) |> select(fecha,provincia,siglas,votos)
+
+b <- a |> summarise(votos=sum(votos), .by = c(fecha, siglas)) |> pivot_wider(names_from = fecha, values_from = votos)
+
+library(ggsankey)
+c <- b %>%
+  make_long("2008-03-01","2011-11-01", "2015-12-01", "2016-06-01" ,"2019-04-01", "2019-11-01") 
+
+d <- c |> left_join(a |> summarise(votos=sum(votos), .by = c(fecha, siglas)), by = c("node"="votos",
+                                                                                     "x"="fecha"))
+
+d |>
+  ggplot(aes(x = x, 
+             next_x = next_x, 
+             node = node, 
+             next_node = next_node,
+             fill = factor(siglas),
+             label = siglas)) +
+  geom_sankey()
+```
+
