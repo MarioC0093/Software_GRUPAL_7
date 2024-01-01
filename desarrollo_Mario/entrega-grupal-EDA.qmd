@@ -1,11 +1,18 @@
 ---
 title: "entrega-grupal-EDA"
 author: "MarioC"
-format: html
+format:
+  html:
+    theme: [style.scss]
+    toc: true
+    toc-location: right
+    toc-title: Índice
 editor: visual
 ---
 
 ```{r}
+#| message: false
+#| warning: false
 #Cargar librerias 
 library(tidyverse)
 library(stringi)
@@ -17,7 +24,10 @@ library(ggridges)
 library(ggsci)
 library(dplyr)
 library(scales)
+library(gridExtra)
 library(ggparliament)
+library(ggbreak)
+library(magick)
 ```
 
 
@@ -30,30 +40,30 @@ encuestas <- read_csv(file = "./datos/encuestas_final.csv")
 datos_elecciones <- datos_elecciones |>
   mutate(siglas = as.factor(siglas)) |> 
   mutate(fecha=as.factor(fecha))
+
+n_elecc <- datos_elecciones |> distinct(fecha) |> pull() |> length()
 ```
 
-```{r}
-#| echo: false
-glue("Tenemos {datos_elecciones |> distinct(fecha) |> pull() |> length()} elecciones diferentes.")
-```
-
-Vamos a ver el número de votos totales en cada elección y la distribución por partidos políticos
 
 ```{r}
-maestra_censos <- datos_elecciones |> distinct(fecha, cod_mun, censo) |> summarise(censo=sum(censo), .by = fecha)
+# Preparamos datos
+maestra_censo <- datos_elecciones |> distinct(fecha, cod_mun, censo) |> summarise(censo=sum(censo), .by = fecha)
 
 data_1 <- datos_elecciones |>
   summarise(votos=sum(votos), .by = c(fecha, siglas)) |> 
-  left_join(maestra_censos, by = "fecha")
+  left_join(maestra_censo, by = "fecha")
   # left_join(datos_elecciones |> distinct(fecha, cod_mun, censo) |> summarise(censo=sum(censo), .by = fecha), by = "fecha")
 
 min_votos <- data_1 |> summarise(votos=sum(votos), .by=fecha) |> 
   summarise(min_v=min(votos)) |> pull()
 
-p_votos <- data_1 |> summarise(votos = sum(votos), .by=fecha) |> left_join(maestra_censos, by = "fecha") |> 
+participacion <- data_1 |> summarise(participacion=sum(votos)/max(censo), .by=fecha)
+
+p_votos <- data_1 |> summarise(votos = sum(votos), .by=fecha) |> left_join(maestra_censo, by = "fecha") |> 
   mutate(p_votos = votos/censo) |> select(p_votos) |> pull()
 ```
 
+Tenemos `r n_elecc` elecciones diferentes. Vamos a ver el número de votos totales en cada elección, el porcentaje de participación y la distribución de los votos a los partidos políticos en cada una de ellas.
 
 ::: {.callout-warning}
 Ordenar partido por el más votado
@@ -64,42 +74,61 @@ Ordenar partido por el más votado
 ```{r}
 data_1 |> 
   ggplot(aes(x=fecha, y=votos, fill=siglas))+
-  geom_col()+
-  geom_hline(yintercept=min_votos, linetype="dashed", color = "white", size=0.5)
+  geom_col(position = "fill")+
+  theme(legend.position = "bottom")
 ```
 
+El número de votos siempre se ha mantenido por encima de `r format(min_votos, scientific=FALSE)` votos pero, ¿cuánto ha supuesto este número de votos sobre el total de la población?
 
-vemos que el número de votos siempre se ha mantenido por encima de `r min_votos`
-pero, ¿cuánto ha supuesto este número de votos sobre el total de la población?
-
-Comparando con el censo para cada una de las elecciones:
+Comparando la participiacón con el censo para cada una de las elecciones:
 
 ```{r}
-data_1 |> 
-  ggplot()+
-  geom_col(aes(x=fecha, y=votos, fill=siglas))+
-  geom_line( aes(x=fecha, y=votos / censo), size=2)+ # esto no consigo ponerlo
-  geom_hline(yintercept=min_votos, linetype="dashed", color = "white", size=0.5)+
-  scale_y_continuous(sec.axis = sec_axis(~.*1/min_votos))
-
-# sería este dato el que hay que plasmar en el gráfico anterior
-data_1 |> 
-  ggplot()+
-  geom_line( aes(x=fecha, y=votos / censo), size=2)
+data_1 |> summarise(votos=sum(votos), .by=c(fecha, censo)) |> mutate(p_votos=votos/censo) |> 
+  ggplot(aes(x=fecha))+
+  geom_col(aes(y=censo))+
+  geom_hline(yintercept=mean(participacion$participacion)*(1/0.00000003), linetype="dashed", color = "white", linewidth=0.5)+
+  geom_line(aes(y = p_votos*(1/0.00000003)),group=1, color = "red")+
+  scale_y_continuous(name="votos", sec.axis = sec_axis(~.*0.00000003,name="p_votos"))+
+  scale_y_break(c(500000, 20000000))
 ```
-
+El número de censados aumenta y la participación parece que va a la baja, aunque con seis registros no se puede afirmar con seguridad. En 2.019 hay un repunte de la participación pero de nuevo vuelve a bajar, posiblemente por el "aburrimiento" de volver a votar en ese mismo año.
 
 ::: {.callout-warning}
 reordenar los factores para que no_votos salga arriba del todo
 :::
 
 
+Miramos el peso que ha tenido las personas censadas que no han votado versus el total de votos por cada una de las elecciones.
+
+
+
 ```{r}
+gif_image <- image_read("https://raw.githubusercontent.com/MarioC0093/Software_GRUPAL_7/main/desarrollo_Mario/votar.gif") %>% image_scale("150")
+
+# fig <- image_graph(width = 300, height = 400)
+fig <- image_graph()
+
 data_1 |> summarise(votos=sum(votos),.by=c(fecha, censo)) |> mutate(no_votos=censo-votos) |>
   pivot_longer(cols = c(votos, no_votos), names_to = "tipo_voto") |> 
   ggplot() +
   geom_col(aes(x=fecha, y=value, fill=tipo_voto), position = "fill")
 
+
+# Composing the full image
+# out <- image_composite(fig, gif_image, offset = "+00+100",  gravity = "center")
+out <- image_composite(fig, gif_image, offset = "+120+75",  gravity = "southeast")
+
+
+# Animation of the image
+animation <- image_animate(out, fps = 10, optimize = TRUE)
+
+# Show the image
+print(animation, info = FALSE) 
+```
+
+Al igual que al inicio veíamos los votos recibidos por cada partida, ahora incluímos ese *no voto* como una representatividad más.
+
+```{r}
 # ToDo: reordenar los factores para que no_votos salga arriba del todo
 data_1 |> summarise(votos=sum(votos),.by=c(fecha, censo)) |> mutate(no_votos=censo-votos) |>
   pivot_longer(cols = c(votos, no_votos), names_to = "tipo_voto") |>
@@ -141,7 +170,6 @@ colores_elecciones <- datos_elecciones |> distinct(siglas) |>
 
 
 La política nacional siempre ha sido bipartidista desde que entro la democracia a finales del siglo pasado. En los últimos años (más bien en las últimas elecciones) ha dado un giro y el bipartidismo ya se quedó atrás en las Cortes Generales.
-
 
 
 ::: {.callout-warning}
@@ -187,8 +215,12 @@ ejecutar el siguiente scrip a ver si funciona con vuestra versiones de R
 :::
 
 
+::: {.callout-note}
+Habría que poner una nota dentro del gráfico que explique que no es una representatividad exacta de escaños sino que es cómo se vería la representación por porcentaje de votos dentro de Las Cortes.
+:::
+
+
 ```{r}
-require(gridExtra)
 # grid.arrange(semi1, semi2, nrow=2, common.legend = TRUE, legend="bottom")
 # da error el common.legend
 ```
@@ -224,3 +256,98 @@ d |>
   geom_sankey()
 ```
 
+Los partidos más votados en las últimas dos elecciones han sido PSOE, PP, VOX, CS, y UP - IU, que junto con MP (por el auge conseguido en los últimos meses previos a las últimas elecciones) son los protagonistas en las noticias de política nacional. ¿Realmente estos partidos están concentrando el grueso de votos frente al resto de partidos de corte autonómico o nacionalista y el resto de partidos (*Otros*)?
+
+
+```{r}
+datos_elecciones |> filter(year(fecha)>2018) |> group_by(siglas) |> summarise(v=sum(votos), n_elecciones=n_distinct(fecha),
+                                                                              media = v/n_elecciones) |> arrange(-media)
+```
+
+```{r}
+datos_elecciones <- datos_elecciones |> mutate(siglas2 = if_else(siglas %in% c("PSOE","PP","VOX","CS","MP","UP"),
+                                                                 "part. principales", "part. aut./nac."))
+```
+
+
+::: {.callout-warning}
+cambiar el filter por slice del primer registro por fecha pq ese es el de part. proncipales
+:::
+
+```{r}
+# datos_elecciones |> summarise(votos=sum(votos), .by = c(fecha, siglas2)) |> reframe(p=votos/sum(votos), .by = fecha) |> 
+#     filter(p>0.5) |> mutate(IC_min = p-1.95*sqrt(p*(1-p)/20000000),
+#                             IC_max = p+1.95*sqrt(p*(1-p)/20000000))
+
+datos_elecciones |> reframe(votos=sum(votos), .by = c(fecha, siglas2)) |>
+  ggplot(aes(x=fecha,y=votos, fill=siglas2))+
+  geom_col(position = "fill",width=0.99)
+  # geom_errorbar(aes(ymin = ci_lo, ymax = ci_hi), position = position_dodge(0.9), width = 0.2)
+```
+
+```{r}
+# spineplot(formula = fecha ~ . ,
+#           data=datos_elecciones |> summarise(votos=sum(votos), .by = c(fecha, siglas2)) |> pivot_wider( names_from = siglas2, values_from = votos))
+```
+
+
+### Problema 1.
+
+::: callout-tip
+## Vicente & Diana
+
+He estado un rato intentando sacar alguna relación entre el censo y el número de mesas con el objetivo de detectar algún outlier o meter un geom_stat con un lm para predecir una a partir de la otra.
+
+Dadle una vuelta a ver si vosotros sacáis algo.
+:::
+
+
+```{r}
+#| results: hold
+datos_elecciones |> group_by(cod_mun) |> # para todas las fechas
+  summarise_at(vars(censo,numero_mesas), mean, na.rm = TRUE) |> mutate(provincia=substring(cod_mun,4,5)) |> 
+ggplot(aes(x = censo, y = numero_mesas)) +
+  geom_point(alpha = 0.1, aes(color = provincia))+
+  geom_text(aes(label= ifelse(censo > 1000000,
+                              as.character(provincia),'')),hjust=0,vjust=0)
+
+
+datos_elecciones |> group_by(cod_mun) |> # para todas las fechas
+  summarise_at(vars(censo,numero_mesas), mean, na.rm = TRUE) |> mutate(provincia=substring(cod_mun,4,5)) |> 
+  filter(!provincia %in% c("08","28")) |> 
+  ggplot(aes(x = log(censo), y = log(numero_mesas))) +
+  geom_point(alpha = 0.1, aes(color = provincia))+
+  geom_text(aes(label= ifelse(censo > quantile(censo,0.95),
+                              as.character(provincia),'')),hjust=0,vjust=0)
+
+
+datos_elecciones |> mutate(provincia=substring(cod_mun,4,5)) |> group_by(provincia) |> # para todas las fechas
+  summarise_at(vars(censo,numero_mesas), mean, na.rm = TRUE) |> 
+  ggplot(aes(x = (censo), y = (numero_mesas))) +
+  geom_point(alpha = 0.1, aes(color = provincia))+
+  geom_text(aes(label= ifelse(censo > quantile(censo,0.95) | numero_mesas > quantile(numero_mesas,0.95),
+                              as.character(provincia),'')),hjust=0,vjust=0)
+
+
+datos_elecciones |> mutate(provincia=substring(cod_mun,4,5)) |> group_by(provincia) |> # para todas las fechas
+  summarise_at(vars(censo,numero_mesas), mean, na.rm = TRUE) |> 
+  filter(!provincia %in% c("35","28","52","51")) |> 
+  ggplot(aes(x = (censo), y = (numero_mesas))) +
+  geom_point(alpha = 0.1, aes(color = provincia))+
+  geom_text(aes(label= ifelse(censo > quantile(censo,0.95) | numero_mesas > quantile(numero_mesas,0.95),
+                              as.character(provincia),'')),hjust=0,vjust=0)
+
+
+# el número medio de personas censadas por mesa que hay
+datos_elecciones |> distinct(fecha, cod_mun, censo, numero_mesas) |> 
+  mutate(provincia=substring(cod_mun,4,5),
+                           personas_mesa = censo/numero_mesas) |> group_by(provincia,fecha) |> # para todas las fechas
+  summarise_at(vars(personas_mesa), mean, na.rm = TRUE) |> 
+  # filter(!provincia %in% c("35","28","52","51")) |> 
+  ggplot(aes(x = (provincia), y = (personas_mesa))) +
+  geom_point(alpha = 0.1, aes(color = fecha))+
+  # facet_wrap(~fecha)+
+  geom_text(aes(label= ifelse(personas_mesa > quantile(personas_mesa,0.99),
+                              as.character(provincia),'')),hjust=0,vjust=0)
+```
+    
