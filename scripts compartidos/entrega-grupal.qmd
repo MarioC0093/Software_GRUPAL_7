@@ -26,7 +26,17 @@ editor: visual
 
 ```{r paquetes}
 rm(list = ls()) # Borramos variables de environment
-
+#Cargar librerias 
+library(tidyverse)
+library(stringi)
+library(lubridate)
+library(glue)
+library(ggthemes)
+library(showtext)
+library(ggridges)
+library(ggsci)
+library(dplyr)
+library(scales)
 ```
 
 ## Práctica grupal
@@ -163,25 +173,7 @@ Recordad que el fin real es demostrarme un dominio de las herramientas vistas a 
 
 ## Desarrollo
 
-### Librerias a utilizar
-
-```{r}
-#Borrar variables del environment
-rm(list = ls())
-#Cargar librerias 
-library(tidyverse)
-library(stringi)
-library(lubridate)
-library(glue)
-library(ggthemes)
-library(showtext)
-library(ggridges)
-library(ggsci)
-library(dplyr)
-library(scales)
-```
-
-La base de datos "datos_elecciones" original es un tible de 48737x471 lo que impide su comprensión para un correcto análisis de datos.
+La base de datos "datos_elecciones" original es un tible de 48.737x471 lo que impide su comprensión para un correcto análisis de datos.
 
 ```{r}
 datos_elecciones
@@ -189,7 +181,7 @@ datos_elecciones
 
 Se considera que es mejor tener una columna con todos los partidos políticos y otra con el número de votos de cada uno en cada municipio en cada una de las elecciones registradas, además se procederá a eliminar NA estos registros que no aportan información.
 
-Obteniendo como resultado un tibble de 396735\*17, es decir con menos columnas y más filas que los datos originales.
+Obteniendo como resultado un tibble de 396735\*17, es decir, con menos columnas y más filas que los datos originales.
 
 ```{r}
 datos_elecciones |>  
