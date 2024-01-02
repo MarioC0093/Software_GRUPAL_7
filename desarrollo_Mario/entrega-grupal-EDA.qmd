@@ -46,9 +46,10 @@ n_elecc <- datos_elecciones |> distinct(fecha) |> pull() |> length()
 
 
 ```{r}
-# Preparamos datos
+# Censo total en cada elección
 maestra_censo <- datos_elecciones |> distinct(fecha, cod_mun, censo) |> summarise(censo=sum(censo), .by = fecha)
 
+# Total de votos por sigla en cada uno de las fechas (agupamos todos los votos de todos los municipios)
 data_1 <- datos_elecciones |>
   summarise(votos=sum(votos), .by = c(fecha, siglas)) |> 
   left_join(maestra_censo, by = "fecha")
@@ -136,6 +137,8 @@ data_1 |> summarise(votos=sum(votos),.by=c(fecha, censo)) |> mutate(no_votos=cen
   rbind(data_1 |> summarise(votos=sum(votos),.by=c(fecha, siglas))) |> 
   ggplot() +
   geom_col(aes(x=fecha, y=votos, fill=siglas), position = "fill")
+
+rm(data_1)
 ```
 
 
@@ -264,17 +267,14 @@ datos_elecciones |> filter(year(fecha)>2018) |> group_by(siglas) |> summarise(v=
                                                                               media = v/n_elecciones) |> arrange(-media)
 ```
 
-```{r}
-datos_elecciones <- datos_elecciones |> mutate(siglas2 = if_else(siglas %in% c("PSOE","PP","VOX","CS","MP","UP"),
-                                                                 "part. principales", "part. aut./nac."))
-```
-
-
 ::: {.callout-warning}
 cambiar el filter por slice del primer registro por fecha pq ese es el de part. proncipales
 :::
 
 ```{r}
+datos_elecciones <- datos_elecciones |> mutate(siglas2 = if_else(siglas %in% c("PSOE","PP","VOX","CS","MP","UP"),
+                                                                 "part. principales", "part. aut./nac."))
+
 # datos_elecciones |> summarise(votos=sum(votos), .by = c(fecha, siglas2)) |> reframe(p=votos/sum(votos), .by = fecha) |> 
 #     filter(p>0.5) |> mutate(IC_min = p-1.95*sqrt(p*(1-p)/20000000),
 #                             IC_max = p+1.95*sqrt(p*(1-p)/20000000))
@@ -285,10 +285,148 @@ datos_elecciones |> reframe(votos=sum(votos), .by = c(fecha, siglas2)) |>
   # geom_errorbar(aes(ymin = ci_lo, ymax = ci_hi), position = position_dodge(0.9), width = 0.2)
 ```
 
+Podemos plantearnos si existe alguna relación entre el censo del municipio y los resultados de las votaciones, tanto a nivel de municpio como a nivel provincia.
+
+Un análisis en relación al censo presenta el problema de que esta variable toma valores muy amplios:
+
 ```{r}
-# spineplot(formula = fecha ~ . ,
-#           data=datos_elecciones |> summarise(votos=sum(votos), .by = c(fecha, siglas2)) |> pivot_wider( names_from = siglas2, values_from = votos))
+datos_elecciones |> summarise(censo = mean(censo), .by = c(fecha,cod_mun)) |> select(censo) |> summary()
+
+# datos_elecciones |> summarise(censo = mean(censo), .by = c(fecha,cod_mun)) |> 
+#   mutate(C_Aut=substring(cod_mun,1,2)) |>
+#   ggplot(aes(x = censo)) +
+#     geom_density_ridges(aes(fill = C_Aut, color=C_Aut,y=C_Aut), alpha=0.1)
+
+# datos_elecciones |> summarise(censo = mean(censo), .by = c(fecha,cod_mun)) |>
+#   mutate(C_Aut=substring(cod_mun,1,2), censo=sqrt(censo)) |>
+#   ggplot(aes(x = censo)) +
+#     geom_density_ridges(aes(fill = C_Aut, color=C_Aut,y=C_Aut), alpha=0.1)
 ```
+
+```{r}
+plot1 <- datos_elecciones |> distinct(fecha,cod_mun,censo) |> summarise(censo = mean(censo), .by = c(cod_mun)) |> 
+  mutate(C_Aut=substring(cod_mun,1,2)) |>
+  ggplot(aes(x = censo)) +
+  geom_histogram()
+
+plot2 <- datos_elecciones |> distinct(fecha,cod_mun,censo) |> summarise(censo = mean(censo), .by = c(cod_mun)) |> 
+  mutate(C_Aut=substring(cod_mun,1,2), censo_log=log(censo)) |>
+  ggplot(aes(x = censo_log)) +
+  geom_histogram()
+
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+Agrupando los municipios por Comunidad Autónoma la variable log(censo) tiene múltiples outliers en cada Comunidad (no para Caueta y Melilla)
+
+::: {.callout-warning}
+No tiene sentido hacer un label con el código de la C. Autónoma cuando el gráfico es a nivel de la Comunidad.
+Buscar método de identificar outliers en boxplot para que se queden marcados/coloreados en vez de poner el geom_text
+:::
+
+```{r}
+plot1 <- datos_elecciones |> distinct(fecha,cod_mun,censo) |> summarise(censo = mean(censo), .by = c(cod_mun)) |> 
+  mutate(C_Aut=substring(cod_mun,1,2)) |>
+  ggplot(aes(x=C_Aut, y = censo)) +
+  geom_boxplot()+
+  geom_text(aes(label= ifelse(censo > 100000,
+                              as.character(C_Aut),'')),hjust=0,vjust=0)
+
+plot2 <- datos_elecciones |> distinct(fecha,cod_mun,censo) |> summarise(censo = mean(censo), .by = c(cod_mun)) |> 
+  mutate(C_Aut=substring(cod_mun,1,2), censo_log=log(censo)) |>
+  ggplot(aes(x=C_Aut, y = censo_log)) +
+  geom_boxplot()+
+  geom_text(aes(label= ifelse(censo_log > log(100000),
+                              as.character(C_Aut),'')),hjust=0,vjust=0)
+
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+Nos centramos en aquellos municipios donde el censo es mayor a 100.000 y vemos que los partidos más votados en conjunto fueron PP y PSOE.
+
+```{r}
+datos_elecciones |> filter(censo > 100000) |> arrange(fecha, cod_mun, -votos) |> 
+  slice_max(votos, n=1, by=c(fecha, cod_mun)) |> 
+  ggplot(aes(x=siglas))+
+  geom_bar()
+```
+
+La visualización anterior es en conjunto de todos los municipios con más de 100.00 habitantes (se suman todos los votos de los municipos y se visualiza la distribución de los votos). Si bajamos a nivel municipio para ver el primer y segundo partido más votado e incluímos a todos los municipios sin excluir en función del censo: 
+
+```{r}
+datos_elecciones|> arrange(fecha, cod_mun, -votos) |> 
+  slice_max(votos, n=2, by=c(fecha, cod_mun)) |> select(fecha, cod_mun, siglas, votos)
+ #   fecha      cod_mun   siglas votos
+ #   <fct>      <chr>     <fct>  <dbl>
+ # 1 2008-03-01 01-04-001 PSOE     512
+ # 2 2008-03-01 01-04-001 PP       382
+ # 3 2008-03-01 01-04-002 PSOE     532
+ # 4 2008-03-01 01-04-002 PP       340
+
+# Partido más votado
+mas_votado1 <- 
+datos_elecciones |> arrange(fecha, cod_mun, -votos) |> 
+  slice_max(votos, n=2, by=c(fecha, cod_mun), with_ties = TRUE) |> select(fecha, cod_mun, siglas, votos) |> 
+  slice_max(votos, n=1, by=c(fecha, cod_mun), with_ties = TRUE) |> mutate(posicion = "Más votado")
+ #   fecha      cod_mun   siglas  votos
+ #   <fct>      <chr>     <fct>   <dbl>
+ # 1 2008-03-01 01-04-001 PSOE     512 Más votado
+ # 2 2008-03-01 01-04-002 PSOE     532 Más votado
+
+# Segundo partido más votado
+mas_votado2 <- 
+datos_elecciones |> arrange(fecha, cod_mun, -votos) |> 
+  slice_max(votos, n=2, by=c(fecha, cod_mun), with_ties = TRUE) |> select(fecha, cod_mun, siglas, votos) |> 
+  slice_min(votos, n=1, by=c(fecha, cod_mun), with_ties = TRUE) |> mutate(posicion = "Segundo más votado")
+ #   fecha      cod_mun   siglas  votos
+ #   <fct>      <chr>     <fct>   <dbl>
+ # 1 2008-03-01 01-04-001 PP       382 Segundo más votado
+ # 2 2008-03-01 01-04-002 PP       340 Segundo más votado
+
+mas_votado <- rbind(mas_votado1,mas_votado2)
+
+mas_votado |> select(siglas, posicion) |> table()
+```
+
+Como no tenemos manera de deshacer un empate de votos, permitimos tener más de un partido en primera posición. En estos casos, todos los partidos que estén en primera posición ocuparán tanto el primer como el segundo puesto.
+
+Así:
+
+```{r}
+#| results: hold
+mas_votado1 |> filter(fecha=="2019-11-01" & cod_mun=="01-04-021")
+mas_votado2 |> filter(fecha=="2019-11-01" & cod_mun=="01-04-021")
+```
+
+O:
+```{r}
+#| results: hold
+mas_votado1 |> filter(fecha=="2015-12-01" & cod_mun=="07-19-010")
+mas_votado2 |> filter(fecha=="2015-12-01" & cod_mun=="07-19-010")
+```
+
+
+```{r}
+mas_votado1 |> select(fecha, cod_mun, siglas, posicion) |>
+  left_join(mas_votado2 |> select(fecha, cod_mun, siglas, posicion),
+            by=c("fecha","cod_mun"), suffix = c("_primero","_segundo")) |> 
+  make_long("siglas_primero","siglas_segundo") |> 
+  ggplot(aes(x = x, 
+             next_x = next_x, 
+             node = node, 
+             next_node = next_node,
+             fill = factor(node),
+             label = node))+
+  ggsankey::geom_sankey(flow.alpha = 0.5, node.color = 1) +
+  ggsankey::geom_sankey_text(size = 3.5, color = 1, fill = "white")+
+  theme(legend.position = "none")
+```
+
+```{r}
+mas_votado |> select(siglas, posicion)%>%
+  make_long(siglas,posicion)
+```
+
 
 
 ### Problema 1.
