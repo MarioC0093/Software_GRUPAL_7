@@ -179,8 +179,7 @@ La base de datos "datos_elecciones" original es un tible de 48.737x471 lo que im
 datos_elecciones
 ```
 
-Se considera que es mejor tener una columna con todos los partidos políticos y otra con el número de votos de cada uno en cada municipio en cada una de las elecciones registradas. Además se procederá a eliminar los valores NA, ya que estos registros hacen referencia a partidos que no han recibido votos en esas elecciones y no aportan información.
---> ToDo: hacer demostración de summary(datos$votos) para ver que el mínimo es 1 y confirmar que NA es que no ha recibido votos, y que no hay distinción entre NA y 0.
+Se considera que es mejor tener una columna con todos los partidos políticos y otra con el número de votos de cada uno en cada municipio en cada una de las elecciones registradas. Además se procederá a eliminar los valores NA, ya que estos registros hacen referencia a partidos que no han recibido votos en esas elecciones y no aportan información. --\> ToDo: hacer demostración de summary(datos\$votos) para ver que el mínimo es 1 y confirmar que NA es que no ha recibido votos, y que no hay distinción entre NA y 0.
 
 Como paso previo se considera eliminar aquellas columnas que no aporten información, es decir, todas aquellas que tengan un único valor.
 
@@ -203,7 +202,7 @@ Se eliminan las columnas: `r cols_sin_informacion`.
 
 -   *vuelta*: valor constante 1.
 
-Obteniendo como resultado un tibble de 396735\*17, es decir, con menos columnas y más filas que los datos originales.
+Obteniendo como resultado un tibble de 396735*17, es decir, con menos columnas y más filas que los datos originales.
 
 ```{r}
 datos_elecciones <- datos_elecciones |>
@@ -215,14 +214,20 @@ datos_elecciones <- datos_elecciones |>
 
 Se crea una nueva columna llamada "fecha" utilizando las columnas "anno" y "mes" mediante la función **`glue`** y una nueva "id_mun" la cual permitire unir las dos bases de datos "cod_mun". Se eliminan las columnas "*anno, mes, codigo_ccaa, codigo_provincia, codigo_municipio"* dado que se han creado nuevas variables con estos datos.
 
+::: {.callout-warning}
+Pulir bien el mutate del formato fecha con `lubridate`.
+:::
+
+
 ```{r}
 datos_elecciones <- datos_elecciones |>
   mutate(fecha=glue("{anno}-{mes}"),
          cod_mun=glue("{codigo_ccaa}-{codigo_provincia}-{codigo_municipio}"),
-         .before = "numero_mesas")|> 
+         .before = "numero_mesas") |> 
   select(-c(anno, mes, codigo_ccaa, codigo_provincia, codigo_municipio))
 ```
-
+  
+  
 Unimos las tablas datos_elecciones y cod_min a fin de que en la base final aparezca el nombre de los municipios.
 
 ```{r}
@@ -272,10 +277,11 @@ siglas <- siglas |>
 siglas <- siglas %>% select(denominacion, siglas) %>% distinct()
 ```
 
-Se procede a añadir las siglas de los partidos a la tabla de datos_encuestas (que incluye información de cod_mun).
-Nota de Mario: datos_encuestas no sé de dónde sale,
-nota de Mario: by=denominacion no sé cómo es, denominación solo está en una tabla
-nota de mario: si haces un inner join te quedas sin los datos.
+Se procede a añadir las siglas de los partidos a la tabla de datos_encuestas (que incluye información de cod_mun). Nota de Mario: datos_encuestas no sé de dónde sale, nota de Mario: by=denominacion no sé cómo es, denominación solo está en una tabla nota de mario: si haces un inner join te quedas sin los datos.
+
+:::{.callout-warning}
+Revisar el `Warning: Detected an unexpected many-to-many`.
+:::
 
 ```{r}
 #| eval: false
@@ -290,7 +296,12 @@ datos_elecciones_siglas <- datos_elecciones |>
   relocate(siglas, .before = partido_politico)
 ```
 
-!!!!! EXPLICAR TODO EL POR QUÉ NO NOS SIRVE SIGLAS (lo que hablamos en la reu) --> MARIO
+::: {.callout-tip}
+## Mario
+
+EXPLICAR TODO EL POR QUÉ NO NOS SIRVE SIGLAS (lo que hablamos en la reu)
+:::
+
 
 ```{r}
 datos_elecciones <- datos_elecciones |> 
@@ -323,8 +334,15 @@ datos_elecciones <- datos_elecciones |>
 # siglas <- siglas %>% select(denominacion, siglas) %>% distinct()
 ```
 
+
+::: {.callout-tip}
+## Mario
+
+Explicar el group by.
+Repasar el group by.
+:::
+
 ```{r}
-### explicar lo que hacemos
 datos_elecciones <- datos_elecciones |> 
   # group_by(fecha, cod_mun) |> # Confirmar que es a este nivel (mriar dims)
   summarise(participacion_1 = sum(participacion_1),
@@ -340,6 +358,25 @@ datos_elecciones <- datos_elecciones |>
 ```
 
 
+Con la estructura final de la tabla datos_elecciones, vemos que no todas las variables están en el formato correcto.
+
+```{r}
+str(datos_elecciones, vec.len=3)
+```
+
+::: {.callout-warning}
+Pulir bien el mutate del formato fecha con `lubridate`.
+:::
+
+```{r}
+datos_elecciones <- datos_elecciones |>
+  mutate(fecha = ym(fecha),
+         siglas = as.factor(siglas))
+```
+
+```{r}
+str(datos_elecciones, give.attr=0, max.level=3, vec.len=3)
+```
 
 Base de datos encuestas
 
@@ -350,7 +387,6 @@ Base de datos encuestas
 -   que tenga un tamaño muestral inferior a 750 o que sea desconocido
 
 -   que tengan menos de 1 o menos días de trabajo de campo
-
 
 ```{r}
 encuestas <- encuestas %>% filter(!date_elec<"2008-01-01" & # descarto que hagan referencia a elecciones anteriores a 2008
@@ -369,7 +405,7 @@ cols_sin_informacion <- encuestas %>%
   summarise(across(everything(), n_distinct)) %>% pivot_longer(cols = everything()) %>% 
   filter(value==1) %>% select(name) %>% pull()
 
-encuestas %>% select(all_of(cols_sin_informacion)) %>% summary() # todo NA excepto exit_poll que es todo a no pie de urna
+encuestas %>% select(all_of(cols_sin_informacion)[1:5]) %>% summary() # todo NA excepto exit_poll que es todo a no pie de urna
 # decidir si ponerlo pq es muy grande el output
 
 encuestas <- encuestas %>% select(-all_of(cols_sin_informacion))
@@ -393,11 +429,58 @@ encuestas <- encuestas |>
   drop_na(estimacion_votos) 
 ```
 
-Unir las bases de datos tabla 2 (**siglas** & tabla 1: **datos_encuestas** & **cod_municipio**) con **encuestas.**
+Los datasets finales con los que trabajamos en el análisis son encuestas y datos_elecciones, que son dos tibbles de dimensiones ____ y ___ respectivamente, donde las filas bla bla (meter definición de tibble).
+
+:::{.callout-warning}
+Elegir el output de los heads.
+:::
+
+::: columns
+::: {.column width="50%"}
 
 ```{r}
-#| eval: false
-# no ejecutar
-encuestas2 <- datos_elecciones |> 
-  left_join(encuestas, by = "siglas")
+head(encuestas)
 ```
+
+:::
+
+::: {.column width="50%"}
+
+
+```{r}
+head(datos_elecciones)
+```
+
+:::
+:::
+
+```{r}
+head(encuestas)
+```
+
+```{r}
+head(datos_elecciones)
+```
+
+Ya que cod_mun ya hemos añadido su información a datos_elecciones y siglas hemos descartado su utilidad.
+
+::: {.border}
+This content can be styled with a border
+:::
+
+::: {.callout-warnings}
+Borrar el chunk export para la entrega.
+:::
+
+```{r export}
+write.csv(datos_elecciones, file = "./datos/datos_elecciones_final.csv", row.names = FALSE)
+write.csv(encuestas, file = "./datos/encuestas_final.csv", row.names = FALSE)
+```
+
+```{r}
+
+```
+
+## Análisis
+
+
