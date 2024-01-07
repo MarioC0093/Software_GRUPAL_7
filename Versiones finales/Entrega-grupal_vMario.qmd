@@ -14,7 +14,7 @@ editor: visual
 
 ```{r paquetes}
 #| warning: false
-rm(list = ls()) # Borramos variables de environment
+# rm(list = ls()) # Borramos variables de environment
 #Cargar librerias 
 library(tidyverse)
 library(stringi)
@@ -51,6 +51,10 @@ siglas <- read_csv(file = "./datos/siglas.csv")
 
 ## Desarrollo
 
+::: callout-warning
+¿meter skim?
+:::
+
 La base de datos "datos_elecciones" original es un tible de 48.737x471 lo que impide su comprensión para un correcto análisis de datos.
 
 ```{r}
@@ -67,7 +71,7 @@ cols_sin_informacion <- datos_elecciones |> select(1:15) |>
   summarise(across(everything(), n_distinct)) |> pivot_longer(cols = everything()) |> 
   filter(value==1) |> select(name) |> pull()
 
-datos_elecciones %>% select(all_of(cols_sin_informacion)) %>% summary() # esto decidir si ponerlo, por si pregunta cómo hemos sacado en el comentario de abajo que son esos valores
+datos_elecciones |>  select(all_of(cols_sin_informacion)) |>  summary() # esto decidir si ponerlo, por si pregunta cómo hemos sacado en el comentario de abajo que son esos valores
 
 datos_elecciones <- datos_elecciones |> select(-all_of(cols_sin_informacion))
 ```
@@ -156,7 +160,7 @@ siglas <- siglas |>
                           TRUE ~ "Otros"),
          .after = denominacion)
 
-siglas <- siglas %>% select(denominacion, siglas) %>% distinct()
+siglas <- siglas |>  select(denominacion, siglas) |>  distinct()
 ```
 
 Se procede a añadir las siglas de los partidos a la tabla de datos_encuestas.
@@ -299,7 +303,7 @@ De la base de encuestas solo nos interesan las encuestas tales que:
 -   tengan menos de 1 o menos días de trabajo de campo.
 
 ```{r}
-encuestas <- encuestas %>% filter(!date_elec<"2008-01-01" & # descarto que hagan referencia a elecciones anteriores a 2008
+encuestas <- encuestas |>  filter(!date_elec<"2008-01-01" & # descarto que hagan referencia a elecciones anteriores a 2008
                                     !exit_poll & # descarto que sean a pie de urna
                                     (size >= 750 & !is.na(size)) & # descarto que tenga un tamaño muestral inferior a 750 o que sea desconocido
                                     (field_date_to-field_date_from) > 1# descarto que tengan menos de 1 o menos días de trabajo de campo
@@ -311,14 +315,14 @@ De nuevo se eliminan aquellas columnas que no aporten información (aquellas que
 
 ```{r}
 #| results: hold
-cols_sin_informacion <- encuestas %>%
-  summarise(across(everything(), n_distinct)) %>% pivot_longer(cols = everything()) %>% 
-  filter(value==1) %>% select(name) %>% pull()
+cols_sin_informacion <- encuestas |> 
+  summarise(across(everything(), n_distinct)) |>  pivot_longer(cols = everything()) |>  
+  filter(value==1) |>  select(name) |>  pull()
 
-encuestas %>% select(all_of(cols_sin_informacion)[1:5]) %>% summary() # todo NA excepto exit_poll que es todo a no pie de urna
+encuestas |>  select(all_of(cols_sin_informacion)[1:5]) |>  summary() # todo NA excepto exit_poll que es todo a no pie de urna
 # decidir si ponerlo pq es muy grande el output
 
-encuestas <- encuestas %>% select(-all_of(cols_sin_informacion))
+encuestas <- encuestas |>  select(-all_of(cols_sin_informacion))
 ```
 
 Se eliminan las columnas: `r cols_sin_informacion`.
@@ -478,7 +482,7 @@ Reordenar los factores para que no_votos salga arriba del todo
 Miramos el peso que ha tenido las personas censadas que no han votado versus el total de votos por cada una de las elecciones.
 
 ```{r}
-gif_image <- image_read("https://raw.githubusercontent.com/MarioC0093/Software_GRUPAL_7/main/desarrollo_Mario/votar.gif") %>% image_scale("150")
+gif_image <- image_read("https://raw.githubusercontent.com/MarioC0093/Software_GRUPAL_7/main/desarrollo_Mario/votar.gif") |>  image_scale("150")
 
 # fig <- image_graph(width = 300, height = 400)
 fig <- image_graph()
@@ -585,7 +589,7 @@ par(mfrow = c(1, 1))
 # 
 # b <- a |> summarise(votos=sum(votos), .by = c(fecha, siglas)) |> pivot_wider(names_from = fecha, values_from = votos)
 # 
-# c <- b %>%
+# c <- b |> 
 #   make_long(datos_elecciones |> select(fecha) |> pull() |> levels()) 
 # 
 # d <- c |> left_join(a |> summarise(votos=sum(votos), .by = c(fecha, siglas)), by = c("node"="votos",
@@ -796,51 +800,57 @@ mas_votado1 |> select(fecha, cod_mun, siglas, posicion) |> filter(siglas=="PSOE"
 mas_votado1 |> filter(fecha=="2008-03" & cod_mun=="01-18-094")
 ```
 
-Igual que hemos visto casos donde primer y segundo puesto estaban empatados, merece la pena mirar dónde esa diferencia es máxima. Mas solo interesa aquellos con un censo alto (superior o igual a 2.000 censados) ya que en municipios más pequeños las diferencias serán muy pequeñas y nos podría distorsionar la distribución por la cola inferior.
+Igual que hemos visto casos donde primer y segundo puesto estaban empatados, merece la pena mirar dónde esa diferencia es máxima. Solo interesa municipios donde el censo sea alto, pongamos un marco de 2.000 censados en adelante, ya que en municipios con pocos censados electorales la diferencia entre primer y segundo partido serán muy pequeñas y esto nos puede dar una distribución de la variable "difenrecia entre primer y segundo partido más votado" con una cola izquierda muy pesada.
 
-Solo interesa municipios donde el censo sea alto, pongamos un marco de 2.000 censados en adelante. Ya que en municipios en pocos censados las diferencias entre primer y segundo partido más votado serán muy pequeñas y esto nos puede dar una distribución de la variable "difenrecia entre primer y segundo partido más votado" con una cola izquierda muy pesada.
-
-Con esta restricción de municipios con mayor censo sabemos que si vemos una diferencia de pocos votos es realmente un resultado ajustado, ya que una diferencia en cinco o diez votos en zonas con pocos censados no tiene tanto impacto.
+Con esta restricción de municipios con mayor censo sabemos que si vemos una diferencia de pocos votos es realmente un resultado ajustado, ya que una diferencia en cinco o diez votos en zonas con pocos censados electorales no tiene tanto impacto.
 
 <!-- Conscientemente trabajamos con medidas repetidas para un mismo municipio (un dato para cada una de las elecciones). -->
 
-Para este punto se plante agrupar los datos de los municipios ya que hasta ahora hemos estado trabajando con medidas repetidas para un mismo municipio (un dato para cada una de las elecciones).
+Para este punto se plantea agrupar los datos de los municipios ya que hasta ahora hemos estado trabajando con medidas repetidas para un mismo municipio (un dato para cada una de las elecciones).
 
 Esto presenta un punto interesante en el nivel de agregación de la información, ya que el hecho de agrupar la información del censo a nivel municipio es para evitar duplicados en un análisis a nivel municipio (en puntos anteriores no era necesaria esta agrupación ya que se estaban analizado resultados electorales independientes). Pero ahora queremos identificar municipios donde la diferencia en votos entre primer y segundo partido fue mayor a lo esperado. Observaciones:
 
-- Sería de esperar que el censo tuviera poca variabilidad y el hecho de agrupar el número de censados por municipio en cada una de las elecciones no afectase mucho al filtro de municipios con más de 2.000 censados. Pero en los últimos años el tráfico de población de zonas rurales a grandes ciudades junto con el fallecimiento de personas de mayor edad y poca natalidad en estos municpios (debido al tráfico de la población) ha hecho que los municipios más pequeños tengan cada año menos censados electorales (poca "renovación" en el censo electoral al no tener jóvenes que sustituyan a los censados electorales más seniors que van saliendo del censo electoral).   
-- Como queremos ver qué municipios han tenido mayor diferencia de votos, no podemos agrupar en bruto los votos de cada partido en cada una de las elecciones a un único registro, aunque podemos usar alternativas como "diferencia media entre primer y segundo partido en la elección *x*".
+-   Sería de esperar que el censo tuviera poca variabilidad y el hecho de agrupar el número de censados por municipio en cada una de las elecciones no afectase mucho al filtro de municipios con más de 2.000 censados. Pero en los últimos años el tráfico de población de zonas rurales a grandes ciudades junto con el fallecimiento de personas de mayor edad y poca natalidad en estos municpios (debido al tráfico de la población) ha hecho que los municipios más pequeños tengan cada año menos censados electorales (poca "renovación" en el censo electoral al no tener jóvenes que sustituyan a los censados electorales más seniors que van saliendo del censo electoral).\
+-   Como queremos ver qué municipios han tenido mayor diferencia de votos, no podemos agrupar en bruto los votos de cada partido en cada una de las elecciones a un único registro, aunque podemos usar alternativas como "diferencia media entre primer y segundo partido en la elección *x*".
+
+Para cada fecha se marca si el municipio tenía menos de 2.000 censados electorales o no. La evolución de esta variable en el tiempo es la siguiente:
 
 ```{r}
-datos_elecciones |> mutate(censo_menor2000 = if_else(censo<2000,1,0)) |> distinct(fecha, cod_mun, censo_menor2000) |> pivot_wider(names_from = fecha, values_from = censo_menor2000) |> select(-cod_mun) |> group_by_all() |> summarise(n=n()) #summarise(media=mean(censo_menor2000), .by=(fecha))
+#| warning: false
+#| results: hold
+datos_elecciones |> mutate(censo_menor2000 = if_else(censo<2000,1,0)) |> distinct(fecha, cod_mun, censo_menor2000)|> summarise(media=mean(censo_menor2000), .by=(fecha))
+
+datos_elecciones |> mutate(censo_menor2000 = if_else(censo<2000,1,0)) |> distinct(fecha, cod_mun, censo_menor2000) |> pivot_wider(names_from = fecha, values_from = censo_menor2000) |> select(-cod_mun) |> group_by_all() |> summarise(n=n()) |>  print(n = 1e3)
 ```
+
+
 
 **HIGHLIGHT**
 
 El municipio de Cesuras (La Coruña) tiene datos solo para 2008-03 y 2011-11 a pesar de tener un censo y censo electoral superior a 2.000.
 
 ```{r}
-datos_elecciones |> mutate(censo_menor2000 = if_else(censo<2000,1,0)) |> distinct(fecha, cod_mun, censo_menor2000) |> pivot_wider(names_from = fecha, values_from = censo_menor2000) |> filter(`2008-03`==0) |> filter(`2011-11`==0) |> filter(is.na(`2015-12`))
-
-datos_elecciones |> filter(cod_mun=="11-15-026") |> distinct(fecha,cod_mun,censo,votos_candidaturas)
+datos_elecciones |> filter(cod_mun=="11-15-026") |> distinct(fecha,cod_mun,municipio,censo,votos_candidaturas)
 ```
 
 Esto es debido a que en 2.013 se crea el municipio Oza-Cesuras como fusión de los municipios de Oza de los Ríos y Cesuras.
 
-[![Elephant](https://raw.githubusercontent.com/MarioC0093/Software_GRUPAL_7/main/desarrollo_Mario/censo_Cesuras.JPG)]
+::: callout-warning
+meter gráfico con leyenda de colores.
+:::
 
+\[![Cesuras](https://raw.githubusercontent.com/MarioC0093/Software_GRUPAL_7/main/desarrollo_Mario/censo_Cesuras.JPG)\]
+
+::: callout-warning
+quitar el hold, quitar los votos y meterlo en dos columnas
+:::
 
 ```{r}
-datos_elecciones |> filter(cod_mun=="11-15-063") |> distinct(fecha,cod_mun,censo,votos_candidaturas) # Oza dos Ríos
+#| results: hold
+datos_elecciones |> filter(cod_mun=="11-15-063") |> distinct(fecha,cod_mun,municipio,censo,votos_candidaturas)
 
-datos_elecciones |> filter(cod_mun=="11-15-902") |> distinct(fecha,cod_mun,censo,votos_candidaturas) # Oza-Cesuras
+datos_elecciones |> filter(cod_mun=="11-15-902") |> distinct(fecha,cod_mun,municipio,censo,votos_candidaturas)
 ```
-
-
-```{r}
-datos_elecciones |> mutate(censo_menor2000 = if_else(censo<2000,1,0)) |> distinct(fecha, cod_mun, censo_menor2000)|> summarise(media=mean(censo_menor2000), .by=(fecha))
-```
-
 
 ::: callout-warning
 Decidir.
@@ -848,80 +858,66 @@ Decidir.
 
 Tenemos dos opciones:
 
-- No hablar de qué municipio tuvo mayor diferencia en votos sino que hablamos de qué municipio-fecha tuvo la mayor diferencia.
-- Quedarnos con resultados de municipios que tuvieron más de 2.000 censados en el momento en que se convocan elecciones y luego agregar los datos a nivel municipio. Esto nos obliga igualmente a agrupar a nivel municipio el número de censados y la diferencia de votos (censo medio y diferencia de votos media)
+-   No hablar de qué municipio tuvo mayor diferencia en votos sino que hablamos de qué municipio-fecha tuvo la mayor diferencia.
+-   Quedarnos con resultados de municipios que tuvieron más de 2.000 censados en el momento en que se convocan elecciones y luego agregar los datos a nivel municipio. Esto nos obliga igualmente a agrupar a nivel municipio el número de censados y la diferencia de votos (censo medio y diferencia de votos media).
 
 ```{r}
-# tapply(datos_elecciones$censo, datos_elecciones$codigo_ccaa,
-#   function(x) format(summary(x), scientific = TRUE))
-# 
-# datos_elecciones %>% 
-#   group_by(codigo_ccaa) %>% 
-#   summarize(mean = mean(censo),
-#             std = var(censo)
+mas_votado |> anti_join(datos_elecciones |> select(fecha, cod_mun, censo) |> filter(censo<2000),
+                              by = c("fecha", "cod_mun")) |> 
+  group_by(fecha,cod_mun) |>  mutate(lag_votos = votos - lag(votos)) |> mutate(lag_votos=-lag_votos) |> head()
 ```
 
-```{r}
-library(skimr)
-# datos_elecciones %>%
-#   select(censo, codigo_ccaa, fecha) |> 
-#   group_by(codigo_ccaa, fecha) %>%
-#   skim()
-```
-
-
-```{r}
-mas_votado |> anti_join(datos_elecciones |> select(fecha, cod_mun, censo) |> filter(censo<20000),
-                              by = c("fecha", "cod_mun")) %>%
-  group_by(fecha,cod_mun) %>% mutate(lag_votos = votos - lag(votos)) |> mutate(lag_votos=-lag_votos) |> head()
-```
-
-Distribución de votos para esos municipios.
+Distribución de votos para los registros con censo mayor a 2.000.
 
 ```{r}
 #| results: hold
-data_2 <- mas_votado |> anti_join(datos_elecciones |> select(fecha, cod_mun, codigo_ccaa, censo) |> filter(censo<20000),
-                              by = c("fecha", "cod_mun")) %>%
-  group_by(fecha,cod_mun) %>% mutate(lag_votos = votos - lag(votos)) |> mutate(lag_votos=-lag_votos) |> drop_na() |> ungroup()
+data_2 <- mas_votado |> anti_join(datos_elecciones |> select(fecha, cod_mun, codigo_ccaa, censo) |> filter(censo<2000),
+                              by = c("fecha", "cod_mun")) |> 
+  group_by(fecha,cod_mun) |>  mutate(lag_votos = votos - lag(votos)) |> mutate(lag_votos=-lag_votos) |> drop_na() |> ungroup()
 
-data_2 |> 
+plot1 <- data_2 |> 
   ggplot(aes(x=votos))+
   geom_density()
 
-data_2 |> 
+plot2 <- data_2 |> 
   ggplot(aes(x=log(votos)))+
   geom_density()
 
-data_2 |> 
-  ggplot(aes(y=log(votos)))+
-  geom_boxplot()
+grid.arrange(plot1, plot2, ncol=2)
 ```
-Yo no mostraría estos dos gráficos:
-```{r}
-data_2 |> 
-  ggplot(aes(x=(votos), y = codigo_ccaa , fill = codigo_ccaa))+
-  geom_density_ridges()
 
-data_2 |> 
+
+Yo no mostraría estos dos gráficos:
+
+```{r}
+plot1 <- data_2 |> 
+  ggplot(aes(x=(votos), y = codigo_ccaa , fill = codigo_ccaa))+
+  geom_density_ridges()+
+  theme(legend.position = "bottom")
+
+plot2 <- data_2 |> 
   ggplot(aes(y = votos , x=codigo_ccaa))+
   geom_boxplot()
-```
 
+grid.arrange(plot1, plot2, ncol=2)
+```
 
 Distribución de la diferencia de votos para esos municipios.
 
 ```{r}
 #| results: hold
-data_2 |> 
+plot1 <- data_2 |> 
   ggplot(aes(x=lag_votos))+
   geom_density()
 
-data_2 |> 
+plot2 <- data_2 |> 
   ggplot(aes(x=log(lag_votos)))+
   geom_density()
+
+grid.arrange(plot1, plot2, ncol=2)
 ```
 
-La distribución del logaritmo de la difenrencia de votos sigue una distribución normal y mucho más visual que la distribucion original que nos permite la búsqueda de outliers.
+La distribución del logaritmo de la diferencia de votos sigue una distribución normal y mucho más visual que la distribucion original que nos permite la búsqueda de outliers.
 
 ```{r}
 # data_2 |> 
@@ -932,48 +928,67 @@ La distribución del logaritmo de la difenrencia de votos sigue una distribució
 #   ggplot(aes(y = lag_votos , x=codigo_ccaa))+
 #   geom_boxplot()
 
-data_2 |> filter(lag_votos>0) |> 
+plot1 <- data_2 |> filter(lag_votos>0) |> 
   ggplot(aes(x=log(lag_votos), y = codigo_ccaa , fill = codigo_ccaa))+
   geom_density_ridges()
 
-data_2 |> filter(lag_votos>0) |> 
+plot2 <- data_2 |> filter(lag_votos>0) |> 
   ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
   geom_boxplot()
+
+grid.arrange(plot1, plot2, nrow=2)
 ```
 
 ```{r}
-findoutlier <- function(x) {
-  return(x < quantile(x, .25) - 1.5*IQR(x) | x > quantile(x, .75) + 1.5*IQR(x))
+findoutlier <- function(x,k=3) {
+  return(x < quantile(x, .25) - k*IQR(x) | x > quantile(x, .75) +k*IQR(x))
 }
-```
 
 
-```{r}
 data_2 |> filter(lag_votos>0) |> 
+  group_by(fecha, codigo_ccaa) |> 
   # mutate(lag_votos_outlier_iqr = if_else(abs(scores(lag_votos, type = "iqr")) > k_iqr, 1, 0)) |> 
-  mutate(outlier = ifelse(findoutlier(lag_votos), lag_votos, NA)) |> 
+  mutate(outlier = ifelse(findoutlier(lag_votos,k=3), lag_votos, NA)) |> 
   ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
   geom_boxplot()+
-  geom_text(aes(label=outlier), na.rm=TRUE, hjust=-.5)
+  geom_text(aes(label=outlier), na.rm=TRUE, hjust=-.5)+
+  facet_wrap(~fecha)
+
+k_mad <- 5
+k_iqr <- 5
+data_2 |> filter(lag_votos>0) |> 
+  group_by(fecha, codigo_ccaa) |> 
+  mutate(lag_votos_outlier_mad = if_else(abs(scores(lag_votos, type = "mad")) > k_mad, 1, NA),
+         lag_votos_outlier_iqr = if_else(abs(scores(lag_votos, type = "iqr")) > k_iqr, 1, NA)) |> 
+  ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
+  geom_boxplot()+
+  geom_text(aes(label=lag_votos_outlier_iqr), na.rm=TRUE, hjust=-.5)+
+  facet_wrap(~fecha)
+
+
+data_2 |> filter(lag_votos>0) |> 
+  group_by(fecha, codigo_ccaa) |> 
+  mutate(lag_votos_outlier_mad = if_else(abs(scores(lag_votos, type = "mad")) > k_mad, 1, NA),
+         lag_votos_outlier_iqr = if_else(abs(scores(log(lag_votos), type = "iqr")) > log(k_iqr), 1, NA)) |> 
+  ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
+  geom_boxplot()+
+  geom_text(aes(label=lag_votos_outlier_iqr), na.rm=TRUE, hjust=-.5)+
+  facet_wrap(~fecha)
 ```
-
-Búsqueda de outliers en la diferencia de votos.
-
 ```{r}
 data_2 |> filter(lag_votos>0) |> 
-  ggplot(aes(y = log(lag_votos) ,  colour = fecha))+
-  geom_boxplot()
+  group_by(fecha, codigo_ccaa) |> 
+  mutate(outlier = if_else(abs(scores(lag_votos, type = "mad")) > k_mad, 1, NA),
+         lag_votos_outlier_iqr = if_else(abs(scores(log(lag_votos), type = "iqr")) > log(k_iqr), 1, NA)) |> 
+  ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
+  geom_boxplot()+
+  geom_text(aes(label=lag_votos_outlier_iqr), na.rm=TRUE, hjust=-.5)+
+  facet_wrap(~fecha)
 ```
 
 
 ```{r}
-data_2 |> filter(lag_votos>0) |> 
-  ggplot(aes(y = log(lag_votos) , x=codigo_ccaa , fill = fecha))+
-  geom_boxplot()
-```
-
-
-```{r}
+#| results: hold
 k_mad <- 5
 k_iqr <- 5
 data_2_outliers_mean <-
@@ -999,11 +1014,10 @@ datos_porcentaje_voto <- datos_elecciones |> distinct(fecha,cod_mun,codigo_ccaa,
 ```
 
 ```{r}
-datos_porcentaje_voto %>% mutate(censo_quantile = ntile(censo , 10)) |> 
+datos_porcentaje_voto |>  mutate(censo_quantile = ntile(censo , 10)) |> 
   ggplot()+
   geom_col(aes(x=censo_quantile, y=p_voto))
 ```
-
 
 ### Problema 1.
 
