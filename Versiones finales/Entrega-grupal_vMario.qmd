@@ -15,7 +15,8 @@ editor: visual
 ```{r paquetes}
 #| warning: false
 # rm(list = ls()) # Borramos variables de environment
-#Cargar librerias 
+# remotes::install_github("davidsjoberg/ggsankey")
+# Cargar librerias 
 library(tidyverse)
 library(stringi)
 library(lubridate)
@@ -267,6 +268,7 @@ sample_1 |> count(fecha, codigo_ccaa) |>
 # microbenchmark(sample_1 |> summarise(votos = sum(votos), .by=everything()[! everything() %in% c('votos')]) |> ungroup(),
 #                sample_1 |> mutate(votos = sum(votos), .by=c(fecha, cod_mun, siglas)) |> distinct() |>ungroup(),
 #                times=100)
+rm(sample_1)
 ```
 
 ```{r}
@@ -362,16 +364,19 @@ head(encuestas)
 
 ::: {.column width="50%"}
 ```{r}
+# borrar
 head(datos_elecciones)
 ```
 :::
 :::
 
 ```{r}
+#| collapse: true
 head(encuestas)
 ```
 
 ```{r}
+#| collapse: true
 head(datos_elecciones)
 ```
 
@@ -560,6 +565,8 @@ semi2 <- ggplot(semicircle, aes(x = x, y = y, colour = siglas)) +
   labs(title = "2019-11") +
   scale_colour_manual(values = semicircle$color_politico, 
                       limits = semicircle$siglas)
+
+rm(semicircle)
 ```
 
 ::: callout-note
@@ -571,7 +578,7 @@ Habría que poner una nota dentro del gráfico que explique que no es una repres
 :::
 
 ```{r}
-# grid.arrange(semi1, semi2, nrow=2, common.legend = TRUE, legend="bottom")
+# grid.arrange(f, semi2, nrow=2, common.legend = TRUE, legend="bottom")
 # da error el common.legend
 ```
 
@@ -579,6 +586,8 @@ Habría que poner una nota dentro del gráfico que explique que no es una repres
 #| results: hold
 par(mfrow = c(2, 1))
 semi1+theme(legend.position = "bottom"); semi2+theme(legend.position = "none")
+rm(semi1)
+rm(semi2)
 par(mfrow = c(1, 1))
 ```
 
@@ -697,7 +706,8 @@ datos_elecciones |> filter(censo > 100000) |> arrange(fecha, cod_mun, -votos) |>
   slice_max(votos, n=1, by=c(fecha, cod_mun)) |> 
   ggplot(aes(x=siglas))+
   geom_bar()+
-  facet_wrap(~fecha)
+  facet_wrap(~fecha, scales="free_y")+
+  coord_flip()
 ```
 
 La visualización anterior es en conjunto de todos los municipios con más de 100.00 habitantes (se suman todos los votos de los municipos y se visualiza la distribución de los votos). Si bajamos a nivel municipio para ver el primer y segundo partido más votado e incluímos a todos los municipios sin excluir en función del censo:
@@ -823,8 +833,6 @@ datos_elecciones |> mutate(censo_menor2000 = if_else(censo<2000,1,0)) |> distinc
 datos_elecciones |> mutate(censo_menor2000 = if_else(censo<2000,1,0)) |> distinct(fecha, cod_mun, censo_menor2000) |> pivot_wider(names_from = fecha, values_from = censo_menor2000) |> select(-cod_mun) |> group_by_all() |> summarise(n=n()) |>  print(n = 1e3)
 ```
 
-
-
 **HIGHLIGHT**
 
 El municipio de Cesuras (La Coruña) tiene datos solo para 2008-03 y 2011-11 a pesar de tener un censo y censo electoral superior a 2.000.
@@ -853,13 +861,13 @@ datos_elecciones |> filter(cod_mun=="11-15-902") |> distinct(fecha,cod_mun,munic
 ```
 
 ::: callout-warning
-Decidir.
+Decidir. La primera, más rápido. Decidido en la reu.
 :::
 
 Tenemos dos opciones:
 
 -   No hablar de qué municipio tuvo mayor diferencia en votos sino que hablamos de qué municipio-fecha tuvo la mayor diferencia.
--   Quedarnos con resultados de municipios que tuvieron más de 2.000 censados en el momento en que se convocan elecciones y luego agregar los datos a nivel municipio. Esto nos obliga igualmente a agrupar a nivel municipio el número de censados y la diferencia de votos (censo medio y diferencia de votos media).
+-   Quedarnos con resultados de municipios que tuvieron más de 2.000 censados en el momento en que se convocan elecciones y luego agregar los datos a nivel municipio. Esto nos obliga igualmente a agrupar a nivel municipio el número de censados y la diferencia de votos (censo medio y diferencia de votos media) y hacer filtros y análisis sobre esto número medio.
 
 ```{r}
 mas_votado |> anti_join(datos_elecciones |> select(fecha, cod_mun, censo) |> filter(censo<2000),
@@ -867,45 +875,35 @@ mas_votado |> anti_join(datos_elecciones |> select(fecha, cod_mun, censo) |> fil
   group_by(fecha,cod_mun) |>  mutate(lag_votos = votos - lag(votos)) |> mutate(lag_votos=-lag_votos) |> head()
 ```
 
-Distribución de votos para los registros con censo mayor a 2.000.
+Se opta por la primera opción, por ser un análisis más rápido y alterar lo menos posible los datos reales. Vemos la distribución de votos para los registros con censo mayor a 2.000.
 
 ```{r}
 #| results: hold
-data_2 <- mas_votado |> anti_join(datos_elecciones |> select(fecha, cod_mun, codigo_ccaa, censo) |> filter(censo<2000),
-                              by = c("fecha", "cod_mun")) |> 
-  group_by(fecha,cod_mun) |>  mutate(lag_votos = votos - lag(votos)) |> mutate(lag_votos=-lag_votos) |> drop_na() |> ungroup()
+# data_2 <- mas_votado |>  mutate(lag_votos = votos - lag(votos), .by = c(fecha,cod_mun)) |> mutate(lag_votos=-lag_votos) |>
+#   select(c(fecha, cod_mun, codigo_ccaa, lag_votos)) |> drop_na() |> ungroup() |> 
+#   anti_join(datos_elecciones |> select(fecha, cod_mun, codigo_ccaa, censo) |> filter(censo<2000),
+#                                   by = c("fecha", "cod_mun")) |> left_join(datos_elecciones |> distinct(fecha, cod_mun, votos, censo))
 
-plot1 <- data_2 |> 
+plot1 <- datos_elecciones |> filter(censo >= 2000) |>  
   ggplot(aes(x=votos))+
   geom_density()
 
-plot2 <- data_2 |> 
+plot2 <- datos_elecciones |> filter(censo >= 2000) |>  
   ggplot(aes(x=log(votos)))+
   geom_density()
 
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
-
-Yo no mostraría estos dos gráficos:
-
-```{r}
-plot1 <- data_2 |> 
-  ggplot(aes(x=(votos), y = codigo_ccaa , fill = codigo_ccaa))+
-  geom_density_ridges()+
-  theme(legend.position = "bottom")
-
-plot2 <- data_2 |> 
-  ggplot(aes(y = votos , x=codigo_ccaa))+
-  geom_boxplot()
-
-grid.arrange(plot1, plot2, ncol=2)
-```
-
-Distribución de la diferencia de votos para esos municipios.
+La distribución de la diferencia de votos para estos mismos municipios.
 
 ```{r}
 #| results: hold
+data_2 <- mas_votado |>  mutate(lag_votos = votos - lag(votos), .by = c(fecha,cod_mun)) |> mutate(lag_votos=-lag_votos) |>
+  select(c(fecha, cod_mun, codigo_ccaa, lag_votos)) |> drop_na() |> ungroup() |> 
+  anti_join(datos_elecciones |> select(fecha, cod_mun, codigo_ccaa, censo) |> filter(censo<2000),
+                                  by = c("fecha", "cod_mun")) |> left_join(datos_elecciones |> distinct(fecha, cod_mun, municipio, censo))
+
 plot1 <- data_2 |> 
   ggplot(aes(x=lag_votos))+
   geom_density()
@@ -920,17 +918,10 @@ grid.arrange(plot1, plot2, ncol=2)
 La distribución del logaritmo de la diferencia de votos sigue una distribución normal y mucho más visual que la distribucion original que nos permite la búsqueda de outliers.
 
 ```{r}
-# data_2 |> 
-#   ggplot(aes(x=(lag_votos), y = codigo_ccaa , fill = codigo_ccaa))+
-#   geom_density_ridges()
-# 
-# data_2 |> 
-#   ggplot(aes(y = lag_votos , x=codigo_ccaa))+
-#   geom_boxplot()
-
 plot1 <- data_2 |> filter(lag_votos>0) |> 
   ggplot(aes(x=log(lag_votos), y = codigo_ccaa , fill = codigo_ccaa))+
-  geom_density_ridges()
+  geom_density_ridges()+
+  theme(legend.position = "none")
 
 plot2 <- data_2 |> filter(lag_votos>0) |> 
   ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
@@ -938,85 +929,110 @@ plot2 <- data_2 |> filter(lag_votos>0) |>
 
 grid.arrange(plot1, plot2, nrow=2)
 ```
+Para determinar los municipios-fecha con mayor diferencia de voto podemos medir esta diferencia de forma absoluta o de forma relativa.
+
+- Absoluta: máximo número en bruto en diferencia de votos.  
+- Relativa: máxima diferencia de votos medida sobre los censados electorales.
+
+Esta segunda forma relativiza la diferencia de votos en función del tamaño de la muestra. Ya que en municipios con mayor censo se espera mayor diferencia en votos.
 
 ```{r}
-findoutlier <- function(x,k=3) {
-  return(x < quantile(x, .25) - k*IQR(x) | x > quantile(x, .75) +k*IQR(x))
-}
-
-
-data_2 |> filter(lag_votos>0) |> 
-  group_by(fecha, codigo_ccaa) |> 
-  # mutate(lag_votos_outlier_iqr = if_else(abs(scores(lag_votos, type = "iqr")) > k_iqr, 1, 0)) |> 
-  mutate(outlier = ifelse(findoutlier(lag_votos,k=3), lag_votos, NA)) |> 
-  ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
-  geom_boxplot()+
-  geom_text(aes(label=outlier), na.rm=TRUE, hjust=-.5)+
-  facet_wrap(~fecha)
-
-k_mad <- 5
-k_iqr <- 5
-data_2 |> filter(lag_votos>0) |> 
-  group_by(fecha, codigo_ccaa) |> 
-  mutate(lag_votos_outlier_mad = if_else(abs(scores(lag_votos, type = "mad")) > k_mad, 1, NA),
-         lag_votos_outlier_iqr = if_else(abs(scores(lag_votos, type = "iqr")) > k_iqr, 1, NA)) |> 
-  ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
-  geom_boxplot()+
-  geom_text(aes(label=lag_votos_outlier_iqr), na.rm=TRUE, hjust=-.5)+
-  facet_wrap(~fecha)
-
-
-data_2 |> filter(lag_votos>0) |> 
-  group_by(fecha, codigo_ccaa) |> 
-  mutate(lag_votos_outlier_mad = if_else(abs(scores(lag_votos, type = "mad")) > k_mad, 1, NA),
-         lag_votos_outlier_iqr = if_else(abs(scores(log(lag_votos), type = "iqr")) > log(k_iqr), 1, NA)) |> 
-  ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
-  geom_boxplot()+
-  geom_text(aes(label=lag_votos_outlier_iqr), na.rm=TRUE, hjust=-.5)+
-  facet_wrap(~fecha)
-```
-```{r}
-data_2 |> filter(lag_votos>0) |> 
-  group_by(fecha, codigo_ccaa) |> 
-  mutate(outlier = if_else(abs(scores(lag_votos, type = "mad")) > k_mad, 1, NA),
-         lag_votos_outlier_iqr = if_else(abs(scores(log(lag_votos), type = "iqr")) > log(k_iqr), 1, NA)) |> 
-  ggplot(aes(y = log(lag_votos) , x=codigo_ccaa))+
-  geom_boxplot()+
-  geom_text(aes(label=lag_votos_outlier_iqr), na.rm=TRUE, hjust=-.5)+
-  facet_wrap(~fecha)
+data_2 |> # summarise(censo=mean(censo), lag_votos=mean(lag_votos), .by = cod_mun) |>
+  ggplot(aes(x=log(censo), y=log(lag_votos)))+
+  geom_point()+
+  stat_smooth(method = "lm")
 ```
 
 
 ```{r}
-#| results: hold
-k_mad <- 5
-k_iqr <- 5
-data_2_outliers_mean <-
-  data_2 |>
-  drop_na() |> 
-  mutate(lag_votos_outlier_mad = if_else(abs(scores(lag_votos, type = "mad")) > k_mad, 1, 0),
-         lag_votos_outlier_iqr = if_else(abs(scores(lag_votos, type = "iqr")) > k_iqr, 1, 0))
+#| collapse: true
+data_diff <- data_2 |> select(fecha, cod_mun, municipio, censo, lag_votos) |> mutate(dif_votos_absoluta =  lag_votos,
+                                                                                     dif_votos_relativa = round(lag_votos/censo,4))
 
-data_2_outliers_mean |> filter(lag_votos_outlier_mad==1) |> select(cod_mun) |> table() |> sort()
-data_2_outliers_mean |> filter(lag_votos_outlier_iqr==1) |> select(cod_mun) |> table() |> sort()
-
-rm(data_2)
+data_diff |> slice_max(dif_votos_absoluta,n=5)
+data_diff |> slice_max(dif_votos_relativa,n=5)
 ```
 
-¿Tendrá algo que ver el porcentaje de voto con los resultados electorales? Miramos primero aqullso municipios y provincias con mayor porcentaje de voto.
+El top cuatro de mayor diferencia absoluta en votos pertenencen al municipio 12-28-079 (Madrid). Es decir, Madrid ha tenido la mayor diferencia absoluta de votos entre el primer y el segundo partido más votado en las cuatro elecciones más antiguas.
+
+De los cinco casos con mayor diferencia absoluta de votos cuatro de ellos son del municipio 01-41-901 (Cañada Rosal).
+
+Observando para cada municipio solo su registro con mayor diferencia de votos absoluta/relativa, el ranking queda de la siguiente manera.
 
 ```{r}
-datos_porcentaje_voto <- datos_elecciones |> distinct(fecha,cod_mun,codigo_ccaa,censo,votos_blancos,votos_nulos,votos_candidaturas) |>
+#| collapse: true
+data_diff |> slice_max(dif_votos_absoluta, n=1, by = municipio) |> slice_max(dif_votos_absoluta, n=5)
+data_diff |> slice_max(dif_votos_relativa, n=1, by = municipio) |> slice_max(dif_votos_relativa, n=5)
+```
+
+Observando en cada elección el municipio con máxima diferencia en votos absoluta/relativa.
+
+```{r}
+#| collapse: true
+data_diff |> slice_max(dif_votos_absoluta, n=1, by = fecha)
+data_diff |> slice_max(dif_votos_relativa, n=1, by = fecha)
+```
+
+Como resumen de los rankings anteriores podemoss decir que las máximas diferencias absolutas en votos pertenecen a las grandes ciudades y suele ser Madrid el municpio que presenta la máxima diferencia, sobre todo en elecciones más antiguas (la diferencia relativa en votos ha ido reduciéndose en cada elección). La diferencia relativa en votos es mayor en municipios donde el censo es más bajo.
+
+¿Tendrá algo que ver el porcentaje de voto con los resultados electorales? Miramos primero aquellos municipios y provincias con mayor porcentaje de voto.
+
+```{r}
+datos_porcentaje_voto <- datos_elecciones |> distinct(fecha,cod_mun,municipio,codigo_ccaa,censo,votos_blancos,votos_nulos,votos_candidaturas) |>
   mutate(votos_municipio = votos_blancos + votos_nulos + votos_candidaturas,
+         p_votos_blancos = round(votos_blancos/censo,2),
+         p_votos_nulos = round(votos_nulos/censo,2),
+         p_votos_candidaturas = round(votos_candidaturas/censo,2),
          p_voto = round(votos_municipio/censo,2))
 
 # datos_porcentaje_voto <- datos_porcentaje_voto |> left_join(mas_votado, by = c("fecha","cod_mun"))
 ```
 
 ```{r}
-datos_porcentaje_voto |>  mutate(censo_quantile = ntile(censo , 10)) |> 
+plot1 <- datos_porcentaje_voto |>  mutate(censo_quantile = ntile(censo , 10)) |> summarise(p_voto=mean(p_voto), .by = censo_quantile) |> 
   ggplot()+
   geom_col(aes(x=censo_quantile, y=p_voto))
+
+plot2 <- datos_porcentaje_voto |>  mutate(censo_quantile = ntile(censo , 10)) |> summarise(p_votos_nulos=mean(p_votos_nulos), .by = censo_quantile) |> 
+  ggplot()+
+  geom_col(aes(x=censo_quantile, y=p_votos_nulos))
+
+grid.arrange(plot1, plot2, ncol=2)
+
+datos_porcentaje_voto |>  mutate(censo_quantile = ntile(censo , 10)) |> summarise(p_votos_nulos=mean(p_votos_nulos), .by = c(censo_quantile,fecha)) |> 
+  ggplot()+
+  geom_col(aes(x=censo_quantile, y=p_votos_nulos))+
+  facet_wrap(~fecha)
+```
+
+Aunque a mayor censo electoral el porcentaje de voto es menor, el porcentaje de votos nulos no parece seguir ninguna tendencia en función del censo. Al igual que con la diferencia de votos, podemos mirar obtener el ranking de votos nulos en frecuencia absoluta o relativa. E igual que antes, la mayor frecuencia absoluta la encontramos en Madrid y Barcelona (con un porcentaje de votos nulos casi inexistente) y la mayor frecuencia relativa la vemos en municipios con muy poco censo electoral.
+
+```{r}
+#| collapse: true
+datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> slice_max(votos_nulos, n=5)
+datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> slice_max(p_votos_nulos, n=5)
+```
+```{r}
+datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_candidaturas, p_voto) |> mutate(censo_quantile = ntile(censo , 20)) |> left_join(mas_votado1 |> select(fecha, cod_mun,siglas)) |> 
+  ggplot()+
+  geom_bar(aes(x=censo_quantile))+
+  geom_text(aes(x=censo_quantile, y = siglas, label=siglas), size = 4)+
+  facet_wrap(~fecha)
+```
+
+```{r}
+data_2 |> # summarise(censo=mean(censo), lag_votos=mean(lag_votos), .by = cod_mun) |> 
+  ggplot(aes(x=log(censo), y=log(lag_votos)))+
+  geom_point()+
+  stat_smooth(method = "lm")
+```
+
+```{r}
+datos_elecciones |> distinct(fecha, cod_mun, censo, votos) |> 
+  ggplot(aes(x=log(censo), y=(votos)))+
+  geom_point()+
+  stat_smooth(method = MASS::exponential)+
+  facet_wrap(~fecha)
 ```
 
 ### Problema 1.
