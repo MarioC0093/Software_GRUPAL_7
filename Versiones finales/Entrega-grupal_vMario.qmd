@@ -1012,6 +1012,53 @@ Aunque a mayor censo electoral el porcentaje de voto es menor, el porcentaje de 
 datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> slice_max(votos_nulos, n=5)
 datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> slice_max(p_votos_nulos, n=5)
 ```
+No podemos comparar el número de votos en dos municipios cuando la diferencia en censados electorales es muy alta. Pero si podemos medir el porcentaje de participación que, por lo dicho en el ejemplo interior, en censos más pequeños hay participación más alta. Si la participación es más alta, ¿el número de votos a las candidaturas es proporcional también? ¿O hay distinto porcentaje de votos nulos votos y votos en blanco en municipios más grandes? Es decir, ¿el porcentaje de votos no destinados a las candidaturas depende del censo?
+
+Aquí lo que vemos es la distribución censal por cuantil y en cada cuantil el porcentaje medio de participación, de votos a las candidaturas, de votos en blanco y de votos nulos. Vemos que la participación baja según aumenta el censo en las poblaciones, pero el porcentaje de porcentajes nulos no sigue esa distribución. Ese porcentaje de votos nulos pertenece al número de votos, es como un subgrupo dentro de esa participación.
+
+```{r}
+# como repaso por si lo queremos ver, en realidad este dato ya le tenemos plasmado en el segundo gráfico
+# datos_porcentaje_voto |> mutate(censo_quantile = ntile(censo , 20)) |> 
+#   ggplot()+
+#   geom_col(aes(x=fecha, y=p_voto))
+
+datos_porcentaje_voto |> mutate(censo_quantile = ntile(censo , 20)) |> 
+  ggplot()+
+  geom_col(aes(x=censo_quantile, y=p_voto))+
+  facet_wrap(~fecha)
+
+
+datos_porcentaje_voto |> mutate(censo_quantile = factor(ntile(censo , 20))) |> 
+  select(fecha, censo_quantile, p_votos_blancos, p_votos_nulos, p_votos_candidaturas, p_voto) |> 
+  # summarise(p_votos_blancos = mean(p_votos_blancos),
+  #           p_votos_nulos = mean(p_votos_nulos),
+  #           p_votos_candidaturas = mean(p_votos_candidaturas),
+  #           p_voto = mean(p_voto),
+  #           .by = c(fecha, censo_quantile)) |>
+  pivot_longer(cols = p_votos_blancos:p_votos_candidaturas,
+               values_to = "porcentaje") |> 
+  ggplot(aes(x=censo_quantile, y=porcentaje, fill=name))+
+  geom_col()+
+  facet_wrap(~fecha)
+```
+```{r}
+# Esto es para ver que las tendencias de votos en blanco y votos nulos no son las mismas en cuestión del censo. Aunque me genera la duda si en el gráfico anterior también tengo que hacer el summarise
+# Entiendo que no porque al hacer el geom_col él mismo te hace la media, y el geom_point como estás mostrando un punto por cada registro sí que es necesario hacer la media para que no salgan varios puntos uno encima del otro en el mismo cuantil.
+datos_porcentaje_voto |> mutate(censo_quantile = factor(ntile(censo , 20))) |> 
+  select(fecha, censo_quantile, p_votos_blancos, p_votos_nulos, p_voto) |> 
+  summarise(p_votos_blancos = mean(p_votos_blancos),
+            p_votos_nulos = mean(p_votos_nulos),
+            p_voto = mean(p_voto),
+            .by = c(fecha, censo_quantile)) |>
+  pivot_longer(cols = p_votos_blancos:p_votos_nulos,
+               values_to = "porcentaje") |> 
+  ggplot(aes(x=censo_quantile, y=porcentaje, color = name, group = name))+
+  geom_line()+
+  geom_point()+
+  facet_wrap(~fecha)
+```
+
+
 ```{r}
 datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_candidaturas, p_voto) |> mutate(censo_quantile = ntile(censo , 20)) |> left_join(mas_votado1 |> select(fecha, cod_mun,siglas)) |> 
   ggplot()+
@@ -1028,11 +1075,12 @@ data_2 |> # summarise(censo=mean(censo), lag_votos=mean(lag_votos), .by = cod_mu
 ```
 
 ```{r}
-datos_elecciones |> distinct(fecha, cod_mun, censo, votos) |> 
-  ggplot(aes(x=log(censo), y=(votos)))+
+datos_elecciones |> distinct(fecha, cod_mun, censo, votos_blancos, votos_nulos, votos_candidaturas) |> 
+  mutate(votos=votos_blancos+votos_nulos+votos_candidaturas) |> 
+  ggplot(aes(x=(censo), y=(votos)))+
   geom_point()+
-  stat_smooth(method = MASS::exponential)+
-  facet_wrap(~fecha)
+  stat_smooth(method = "lm")
+  # facet_wrap(~fecha)
 ```
 
 ### Problema 1.
