@@ -632,8 +632,14 @@ cambiar el filter por slice del primer registro por fecha pq ese es el de part. 
 :::
 
 ```{r}
-datos_elecciones <- datos_elecciones |> mutate(siglas2 = if_else(siglas %in% c("PSOE","PP","VOX","CS","MP","UP"),
-                                                                 "part. principales", "part. aut./nac."))
+siglas_aut_y_nac <- function(data,var){
+  data <- data |> mutate(siglas2 = if_else(var %in% c("PSOE","PP","VOX","CS","MP","UP"),
+                                           "part. principales", "part. aut./nac."))
+  return(data)
+}
+# datos_elecciones <- datos_elecciones |> mutate(siglas2 = if_else(siglas %in% c("PSOE","PP","VOX","CS","MP","UP"),
+#                                                                  "part. principales", "part. aut./nac."))
+datos_elecciones <- siglas_aut_y_nac(datos_elecciones)
 
 # datos_elecciones |> summarise(votos=sum(votos), .by = c(fecha, siglas2)) |> reframe(p=votos/sum(votos), .by = fecha) |> 
 #     filter(p>0.5) |> mutate(IC_min = p-1.95*sqrt(p*(1-p)/20000000),
@@ -929,10 +935,11 @@ plot2 <- data_2 |> filter(lag_votos>0) |>
 
 grid.arrange(plot1, plot2, nrow=2)
 ```
+
 Para determinar los municipios-fecha con mayor diferencia de voto podemos medir esta diferencia de forma absoluta o de forma relativa.
 
-- Absoluta: máximo número en bruto en diferencia de votos.  
-- Relativa: máxima diferencia de votos medida sobre los censados electorales.
+-   Absoluta: máximo número en bruto en diferencia de votos.\
+-   Relativa: máxima diferencia de votos medida sobre los censados electorales.
 
 Esta segunda forma relativiza la diferencia de votos en función del tamaño de la muestra. Ya que en municipios con mayor censo se espera mayor diferencia en votos.
 
@@ -942,7 +949,6 @@ data_2 |> # summarise(censo=mean(censo), lag_votos=mean(lag_votos), .by = cod_mu
   geom_point()+
   stat_smooth(method = "lm")
 ```
-
 
 ```{r}
 #| collapse: true
@@ -1012,9 +1018,10 @@ Aunque a mayor censo electoral el porcentaje de voto es menor, el porcentaje de 
 datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> slice_max(votos_nulos, n=5)
 datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> slice_max(p_votos_nulos, n=5)
 ```
+
 No podemos comparar el número de votos en dos municipios cuando la diferencia en censados electorales es muy alta. Pero si podemos medir el porcentaje de participación que, por lo dicho en el ejemplo interior, en censos más pequeños hay participación más alta. Si la participación es más alta, ¿el número de votos a las candidaturas es proporcional también? ¿O hay distinto porcentaje de votos nulos votos y votos en blanco en municipios más grandes? Es decir, ¿el porcentaje de votos no destinados a las candidaturas depende del censo?
 
-Aquí lo que vemos es la distribución censal por cuantil y en cada cuantil el porcentaje medio de participación, de votos a las candidaturas, de votos en blanco y de votos nulos. Vemos que la participación baja según aumenta el censo en las poblaciones, pero el porcentaje de porcentajes nulos no sigue esa distribución. Ese porcentaje de votos nulos pertenece al número de votos, es como un subgrupo dentro de esa participación.
+Vemos es la distribución censal por cuantil y el porcentaje medio de participación, dividido por el porcentaje de votos a las candidaturas, de votos en blanco y de votos nulos (porcentajes medidos como votos -de esas tres categorías- sobre el censo). Vemos cómo la participación baja según aumenta el censo en las poblaciones, pero el porcentaje de votos nulos no sigue esa distribución.
 
 ```{r}
 # como repaso por si lo queremos ver, en realidad este dato ya le tenemos plasmado en el segundo gráfico
@@ -1022,25 +1029,50 @@ Aquí lo que vemos es la distribución censal por cuantil y en cada cuantil el p
 #   ggplot()+
 #   geom_col(aes(x=fecha, y=p_voto))
 
-datos_porcentaje_voto |> mutate(censo_quantile = ntile(censo , 20)) |> 
+# Elegir cuál de los tres
+# Yo eligiría el tercero pero poniendo dentro de la barra el valor
+
+datos_porcentaje_voto |> mutate(censo_quantile = ntile(censo , 10)) |>
+  summarise(p_voto=mean(p_voto), .by = c(fecha, censo_quantile)) |> 
   ggplot()+
   geom_col(aes(x=censo_quantile, y=p_voto))+
+  scale_y_break(c(0, 0.65))+
   facet_wrap(~fecha)
+  
 
-
-datos_porcentaje_voto |> mutate(censo_quantile = factor(ntile(censo , 20))) |> 
+datos_porcentaje_voto |> mutate(censo_quantile = factor(ntile(censo , 10))) |> 
   select(fecha, censo_quantile, p_votos_blancos, p_votos_nulos, p_votos_candidaturas, p_voto) |> 
-  # summarise(p_votos_blancos = mean(p_votos_blancos),
-  #           p_votos_nulos = mean(p_votos_nulos),
-  #           p_votos_candidaturas = mean(p_votos_candidaturas),
-  #           p_voto = mean(p_voto),
-  #           .by = c(fecha, censo_quantile)) |>
+  summarise(p_votos_blancos = mean(p_votos_blancos),
+            p_votos_nulos = mean(p_votos_nulos),
+            p_votos_candidaturas = mean(p_votos_candidaturas),
+            p_voto = mean(p_voto),
+            .by = c(fecha, censo_quantile)) |>
   pivot_longer(cols = p_votos_blancos:p_votos_candidaturas,
                values_to = "porcentaje") |> 
+  mutate(name=factor(name, levels = c("p_votos_nulos","p_votos_blancos","p_votos_candidaturas"), ordered = TRUE)) |>
   ggplot(aes(x=censo_quantile, y=porcentaje, fill=name))+
   geom_col()+
+  scale_y_break(c(0, 0.65))+ # opcional?
+  facet_wrap(~fecha)
+# title y subtiel: porcentaje total de voto dividido en porcentaje de votos en blanco, nulos y a candidaturas
+# leyenda abajo
+
+datos_porcentaje_voto |> mutate(censo_quantile = factor(ntile(censo , 10))) |> 
+  select(fecha, censo_quantile, p_votos_blancos, p_votos_nulos, p_votos_candidaturas, p_voto) |> 
+  summarise(p_votos_blancos = mean(p_votos_blancos),
+            p_votos_nulos = mean(p_votos_nulos),
+            p_votos_candidaturas = mean(p_votos_candidaturas),
+            p_voto = mean(p_voto),
+            .by = c(fecha, censo_quantile)) |>
+  pivot_longer(cols = p_votos_blancos:p_votos_candidaturas,
+               values_to = "porcentaje") |>
+  mutate(name=factor(name, levels = c("p_votos_nulos","p_votos_blancos","p_votos_candidaturas"), ordered = TRUE)) |> 
+  ggplot(aes(x=censo_quantile, y=porcentaje, fill=name))+
+  geom_col(position = "fill")+
+  scale_y_break(c(0, 0.95))+
   facet_wrap(~fecha)
 ```
+
 ```{r}
 # Esto es para ver que las tendencias de votos en blanco y votos nulos no son las mismas en cuestión del censo. Aunque me genera la duda si en el gráfico anterior también tengo que hacer el summarise
 # Entiendo que no porque al hacer el geom_col él mismo te hace la media, y el geom_point como estás mostrando un punto por cada registro sí que es necesario hacer la media para que no salgan varios puntos uno encima del otro en el mismo cuantil.
@@ -1058,13 +1090,58 @@ datos_porcentaje_voto |> mutate(censo_quantile = factor(ntile(censo , 20))) |>
   facet_wrap(~fecha)
 ```
 
+Ademas siempre están las apuestas de "si la participación es alta beneficia a la derecha o a la izquierda", etc.
 
 ```{r}
-datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_candidaturas, p_voto) |> mutate(censo_quantile = ntile(censo , 20)) |> left_join(mas_votado1 |> select(fecha, cod_mun,siglas)) |> 
+datos_elecciones |> summarise(votos=sum(votos), .by=c(fecha, cod_mun, censo, participacion_1, participacion_2)) |>
+  summarise(censo=sum(censo),
+            votos=sum(votos),
+            participacion_1=sum(participacion_1),
+            participacion_2=sum(participacion_2), .by=c(fecha)) |> 
+  mutate(p_votos=votos/censo, p_participacion_1=participacion_1/censo, p_participacion_2=participacion_2/censo) |> 
+  ggplot(aes(x=fecha))+
+  geom_col(aes(y=censo))+
+  geom_line(aes(y = p_votos*(1/0.00000003)),group=1, color = "red")+
+  geom_line(aes(y = p_participacion_1*(1/0.00000003)),group=2, color = "blue")+
+  geom_line(aes(y = p_participacion_2*(1/0.00000003)),group=2, color = "green")
+```
+
+Tras interiorizar las tendencias del porcentaje de votos en las distintas fechas, ¿vemos cambios en los resultados electores según el porcentaje de voto?
+
+```{r}
+datos_elecciones |> summarise(votos=sum(votos), .by=c(fecha, cod_mun, censo, participacion_1, participacion_2)) |>
+  summarise(censo=sum(censo),
+            votos=sum(votos),
+            participacion_1=sum(participacion_1),
+            participacion_2=sum(participacion_2), .by=c(fecha)) |> 
+  mutate(p_votos=votos/censo, p_participacion_1=participacion_1/censo, p_participacion_2=participacion_2/censo) |> 
+  ggplot(aes(x=fecha))+
+  geom_col(aes(y=censo))+
+  geom_line(aes(y = p_votos*(1/0.00000003)),group=1, color = "red")+
+  geom_line(aes(y = p_participacion_1*(1/0.00000003)),group=2, color = "blue")+
+  geom_line(aes(y = p_participacion_2*(1/0.00000003)),group=2, color = "green")
+```
+
+Supongamos que existe una relación directa entre censo del municipio y tipo de área: rural o urbana o zonas intermedias.
+
+::: callout-warning
+Comentar del segundo chunk (chunk_comentar) el cambio de votos en cada provincia hacia los partidos a medida que aumenta el censo. Valorar si se hace por siglas o por siglas2.
+:::
+
+```{r}
+datos_porcentaje_voto |> select(fecha, cod_mun, codigo_ccaa, censo, votos_candidaturas, p_voto) |> mutate(censo_quantile = ntile(censo , 20)) |> left_join(mas_votado1 |> select(fecha, cod_mun,siglas)) |> mutate(siglas2 = if_else(siglas %in% c("PSOE","PP","VOX","CS","MP","UP"),
+                                           "part. principales", "part. aut./nac.")) |> 
   ggplot()+
-  geom_bar(aes(x=censo_quantile))+
-  geom_text(aes(x=censo_quantile, y = siglas, label=siglas), size = 4)+
-  facet_wrap(~fecha)
+  geom_bar(aes(x=censo_quantile, fill=siglas))+
+  facet_wrap(~codigo_ccaa, scales = "free_y")
+```
+
+```{r chunk_comentar}
+datos_porcentaje_voto |> select(fecha, cod_mun, codigo_ccaa, censo, p_votos_candidaturas) |> mutate(censo_quantile = ntile(censo , 20), .by=codigo_ccaa) |> left_join(mas_votado1 |> select(fecha, cod_mun,siglas)) |> mutate(siglas2 = if_else(siglas %in% c("PSOE","PP","VOX","CS","MP","UP"),
+                                           "part. principales", "part. aut./nac.")) |> 
+  ggplot(aes(x=censo_quantile, y=p_votos_candidaturas, fill=siglas))+
+  geom_col(position = "fill")+
+  facet_wrap(~codigo_ccaa)
 ```
 
 ```{r}
