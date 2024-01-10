@@ -14,6 +14,7 @@ ToDo id | Text | Done
 7 | sustituir "censo" por "censo electoral" | 0
 
 N.º | MUST | Done
+------------- | ------------- | -------------
 1 | ¿Cómo se reparte el voto de partidos de ámbito nacional (PSOE, PP, VOX, CS, MP, UP - IU) frente a los partidos de corte autonómico o nacionalista? | x
 2 | ¿Cuál el partido ganador en los municipios de más de 100 000 habitantes de censo en cada una de las elecciones? | x
 3 | ¿Qué partido fue el segundo cuando el primero fue el PSOE? ¿Y cuándo el primero fue el PP? | x
