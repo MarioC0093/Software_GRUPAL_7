@@ -23,7 +23,7 @@ N.º | MUST | Done
 6 | ¿En qué sitios hay mayor participación? ¿Quién ganó en los sitios con mayor participación y donde menos? ¿A quién le beneficia la baja participación? | 
 7 | ¿Cómo analizar la relación entre censo y voto? ¿Es cierto que ciertos partidos ganan lo rural? | x
 8 | ¿Cómo calibrar el error de las encuestas? ¿Cómo visualizarlo? (recuerda que las encuestas son intención de voto a nivel nacional) | 
-9 | ¿En qué elección se equivocaron más las encuestas? | 
+9 | ¿En qué elección se equivocaron más las encuestas? | x
 10 | ¿Cómo se equivocaron las encuestas en partidos de ámbito nacional (PSOE, PP, VOX, CS, MP, UP - IU) | 
 11 | ¿Qué casas encuestadores acertaron más y cuales se desviaron más de los resultados? | 
 
