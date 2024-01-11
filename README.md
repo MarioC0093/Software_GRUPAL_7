@@ -12,6 +12,7 @@ ToDo id | Text | Done
 5 | en algunas ocasiones nombramos las bases de datos entre comillas y otras no, unificarlo | 0
 6 | crear el theme personalizado | 0
 7 | sustituir "censo" por "censo electoral" | 0
+8 | borrar esta línea | 0
 
 N.º | MUST | Done
 ------------- | ------------- | -------------
