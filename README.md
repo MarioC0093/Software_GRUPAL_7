@@ -2,18 +2,6 @@
 Práctica grupal de Software del máster de Bioestadística del mejor grupo (el grupo 7)
 
 
-
-ToDo id | Text | Done
-------------- | ------------- | -------------
-1 | cargar solo los paquetes necesarios que se usan en el quarto | 0
-2 | filtros y sentencias con fechas: asegurar que se hacen con lubridate | 0
-3 | optimizar joins y merges de la manera en que le gusta al profesor y revisar el many-to-many relationship | 0
-4 | ¿confirmamos que es un mayor estricto (field_date_to-field_date_from) > 1? | 0
-5 | en algunas ocasiones nombramos las bases de datos entre comillas y otras no, unificarlo | 0
-6 | crear el theme personalizado | 0
-7 | sustituir "censo" por "censo electoral" | 0
-8 | borrar esta línea | 0
-
 N.º | MUST | Done
 ------------- | ------------- | -------------
 1 | ¿Cómo se reparte el voto de partidos de ámbito nacional (PSOE, PP, VOX, CS, MP, UP - IU) frente a los partidos de corte autonómico o nacionalista? | x
@@ -27,4 +15,18 @@ N.º | MUST | Done
 9 | ¿En qué elección se equivocaron más las encuestas? | x
 10 | ¿Cómo se equivocaron las encuestas en partidos de ámbito nacional (PSOE, PP, VOX, CS, MP, UP - IU) | 
 11 | ¿Qué casas encuestadores acertaron más y cuales se desviaron más de los resultados? | 
+
+
+ToDo id | Text | Done
+------------- | ------------- | -------------
+1 | cargar solo los paquetes necesarios que se usan en el quarto | 0
+2 | filtros y sentencias con fechas: asegurar que se hacen con lubridate | 0
+3 | optimizar joins y merges de la manera en que le gusta al profesor y revisar el many-to-many relationship | 0
+4 | ¿confirmamos que es un mayor estricto (field_date_to-field_date_from) > 1? | 0
+5 | en algunas ocasiones nombramos las bases de datos entre comillas y otras no, unificarlo | 0
+6 | crear el theme personalizado | 0
+7 | sustituir "censo" por "censo electoral" | 0
+8 | borrar esta línea | 0
+
+
 
