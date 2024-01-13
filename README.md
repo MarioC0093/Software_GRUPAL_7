@@ -25,7 +25,7 @@ ToDo id | Text | Done
 4 | ¿confirmamos que es un mayor estricto (field_date_to-field_date_from) > 1? | 0
 5 | en algunas ocasiones nombramos las bases de datos entre comillas y otras no, unificarlo | 0
 6 | crear el theme personalizado | 0
-7 | sustituir "censo" por "censo electoral" | 0
+7 | sustituir "censo" por "censo electoral" | 1
 8 | la función está media rara, tira un warning | 0
 9 | revisar siglas en encuestas | 0
 10 | evaluar que se queda y que se va | 0
