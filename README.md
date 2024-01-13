@@ -26,6 +26,12 @@ ToDo id | Text | Done
 5 | en algunas ocasiones nombramos las bases de datos entre comillas y otras no, unificarlo | 0
 6 | crear el theme personalizado | 0
 7 | sustituir "censo" por "censo electoral" | 0
+8 | la función está media rara, tira un warning | 0
+9 | revisar siglas en encuestas | 0
+10 | evaluar que se queda y que se va | 0
+11 | evaluar posibles duplicados en lo que estamos haciendo | 0
+12 | mejorar algunos gráficos? | 0
+
 
 
 
