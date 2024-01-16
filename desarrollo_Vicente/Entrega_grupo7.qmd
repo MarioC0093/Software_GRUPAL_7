@@ -10,13 +10,6 @@ format:
 editor: visual
 ---
 
-```{ = html}
-<style type="text/css">
-  body{
-  font-size: 12pt;
-}
-</style>
-```
 > Introduce en el chunk inferior los paquetes que vayas a necesitar
 
 ```{r paquetes}
@@ -267,6 +260,7 @@ datos_elecciones <- datos_elecciones |>
                           str_detect(str_to_upper(partido_politico), "VERDES|PODEM|EZKER|COMUNISTA|ZQUIERDA REPUBLICANA
                                      |VERDS|IZQUIERDA UNIDA|EN MAREA|UNIDAD POPULAR|EQUO") & # importante que el | esté en esta línea y no al final de la anterior
                             !str_detect(str_to_upper(stringi::stri_trans_general(partido_politico, id = "Latin-ASCII")), "MAS PAIS") ~ "UP",
+                          partido_politico == "IU" ~ "UP",
                           str_detect(str_to_lower(partido_politico), "erc") |
                             str_detect(tolower(partido_politico), "esquerra republicana") ~ "ERC",
                           # FRONT PEL PAIS VALENCIA-ERC --> ERC
@@ -380,9 +374,10 @@ datos_elecciones_maestra |> select(where(is.numeric)) |>
          log_votos_candidaturas = log(votos_candidaturas)) |> 
   select(matches("p_|log_")) |> 
   pivot_longer(cols = everything()) |> 
-  ggplot(aes(x=value))+
+  ggplot(aes(x=value)) +
   tema_7 +
-  geom_density()+facet_wrap(.~name, scales = "free")
+  geom_density() +
+  facet_wrap(.~name, scales = "free")
 ```
 
 ## Limpieza de datos
@@ -408,10 +403,10 @@ dim(datos_elecciones_maestra)
 
 Para la tercera casuística, los registros donde el dato del segundo avance es cero pero el dato del primer avance ha sido mayor a cero vamos a imputarlos. Los casos donde tanto el primer como el segundo avance es cero, se dan por válidos ya que el censo electoral de esos municipios es muy pequeño (vamos a suponer que todos los censados del pueblo fueron a votar a última hora).
 
-## Mario: Revisar este código porque no se está cargando en ninguna variable y no está haciendo un filtro por >
 ```{r}
 datos_elecciones_maestra |> 
-  filter( p_participacion_1==0 & p_participacion_2==0 ) |> select(fecha,cod_mun,censo,p_participacion_1,p_participacion_2, p_votos)
+  filter(p_participacion_1 == 0 & p_participacion_2 == 0 ) |> 
+  select(fecha, cod_mun, censo, p_participacion_1, p_participacion_2, p_votos)
 ```
 
 ## Limpieza de datos
@@ -420,7 +415,8 @@ En los casos donde el dato del primer avance es superior al segundo se buscan mu
 
 ```{r}
 datos_elecciones_maestra |> 
-  filter( p_participacion_1>1 | p_participacion_1>p_participacion_2 ) |> select(fecha,cod_mun,censo,p_participacion_1,p_participacion_2)
+  filter(p_participacion_1 > 1 | p_participacion_1 > p_participacion_2) |> 
+  select(fecha, cod_mun, censo, p_participacion_1, p_participacion_2)
 ```
 
 \newpage
@@ -432,19 +428,27 @@ correcion_df <- function(data, cond_errata){
   a <- data |> filter( eval(parse(text=cond_errata)) )
   
   return(as_tibble(a))
-  
 }
 
 correcion_dato_censal <- function(data, var_errata, fecha_errata, mun_errata){
   
-  censo_errata <- data |> filter(fecha==fecha_errata & cod_mun==mun_errata) |> select(censo) |> pull()
-  part_2_tope <- data |> filter(fecha==fecha_errata & cod_mun==mun_errata) |> select(p_participacion_2) |> pull()
+  censo_errata <- data |> 
+    filter(fecha==fecha_errata & cod_mun == mun_errata) |> 
+    select(censo) |> 
+    pull()
   
-  varlor_new <- data |> filter(fecha==fecha_errata & cod_mun!=mun_errata & eval(parse(text=var_errata))<=1 & p_participacion_2<=part_2_tope) |>
+  part_2_tope <- data |> 
+    filter(fecha==fecha_errata & cod_mun == mun_errata) |> 
+    select(p_participacion_2) |> 
+    pull()
+  
+  varlor_new <- data |> 
+    filter(fecha == fecha_errata & cod_mun != mun_errata & eval(parse(text=var_errata)) <= 1 & p_participacion_2 <= part_2_tope) |>
     filter(between(censo,
-                   censo_errata-censo_errata*0.10,
-                   censo_errata+censo_errata*0.10)) |> select(all_of(var_errata)) |> 
-    sapply(, FUN="mean", na.rm = TRUE)
+                   censo_errata - censo_errata * 0.1,
+                   censo_errata + censo_errata * 0.1)) |> 
+    select(all_of(var_errata)) |> 
+    sapply(, FUN = "mean", na.rm = TRUE)
   
   if (is.na(varlor_new)) { varlor_new = part_2_tope}
   if (varlor_new > part_2_tope) { varlor_new = part_2_tope}
@@ -456,7 +460,6 @@ correcion_dato_censal <- function(data, var_errata, fecha_errata, mun_errata){
   #         mutate(val1=censo_errata-censo_errata*0.10,val2=censo_errata+censo_errata*0.10))
   
   return(varlor_new)
-  
 }
 ```
 
@@ -466,25 +469,28 @@ cond_errata_1 = "(p_participacion_1>1 | p_participacion_1>p_participacion_2)"
 new_data <- 
 correcion_df(datos_elecciones_maestra,cond_errata_1) |>
   mutate(p_participacion_1 = correcion_dato_censal(data = datos_elecciones_maestra, # corrijo con la base de datos original
-                                                   var_errata="p_participacion_1",
-                                                   fecha_errata=fecha,
-                                                   mun_errata=cod_mun),
-         .by = c(fecha,cod_mun))
+                                                   var_errata = "p_participacion_1",
+                                                   fecha_errata = fecha,
+                                                   mun_errata = cod_mun),
+         .by = c(fecha, cod_mun))
 ```
 
 ```{r}
-new_data
 
-datos_elecciones_maestra <- datos_elecciones_maestra |> anti_join(new_data, by=c("fecha","cod_mun"))
-datos_elecciones_maestra <- rbind(datos_elecciones_maestra,new_data)
+datos_elecciones_maestra <- datos_elecciones_maestra |> 
+  anti_join(new_data, by = c("fecha", "cod_mun"))
+datos_elecciones_maestra <- rbind(datos_elecciones_maestra, new_data)
 ```
 
 Comprobamos que ya no quedan registros con ese tipo de error.
 
 ```{r}
-datos_elecciones_maestra <- datos_elecciones_maestra |> anti_join(new_data, by=c("fecha","cod_mun"))
+datos_elecciones_maestra <- datos_elecciones_maestra |> 
+  anti_join(new_data, by=c("fecha", "cod_mun"))
 datos_elecciones_maestra <- rbind(datos_elecciones_maestra,new_data)
-datos_elecciones_maestra |> filter( p_participacion_1>1 | p_participacion_1>p_participacion_2 ) |> select(fecha,cod_mun,censo,p_participacion_1,p_participacion_2)
+datos_elecciones_maestra |> 
+  filter(p_participacion_1>1 | p_participacion_1 > p_participacion_2) |> 
+  select(fecha, cod_mun, censo, p_participacion_1, p_participacion_2)
 ```
 
 \newpage
@@ -493,12 +499,13 @@ datos_elecciones_maestra |> filter( p_participacion_1>1 | p_participacion_1>p_pa
 
 ```{r}
 datos_elecciones_maestra |> 
-  filter( p_participacion_1==0 & p_participacion_2==0 ) |> 
-  select(fecha,cod_mun,censo,p_participacion_1,p_participacion_2, p_votos)
+  filter(p_participacion_1==0 & p_participacion_2 == 0) |> 
+  select(fecha, cod_mun, censo, p_participacion_1, p_participacion_2, p_votos)
 ```
 
 ```{r}
-datos_elecciones_maestra |> select(where(is.numeric)) |> 
+datos_elecciones_maestra |> 
+  select(where(is.numeric)) |> 
   mutate(log_censo = log(censo),
          log_numero_mesas = log(numero_mesas),
          log_participacion_1 = log(participacion_1),
@@ -509,7 +516,7 @@ datos_elecciones_maestra |> select(where(is.numeric)) |>
          log_votos_candidaturas = log(votos_candidaturas)) |> 
   select(matches("p_|log_")) |> 
   pivot_longer(cols = everything()) |> 
-  ggplot(aes(x=value))+
+  ggplot(aes(x = value)) +
   tema_7 +
   geom_density() +
   facet_wrap(.~name, scales = "free")
@@ -547,7 +554,8 @@ De nuevo, se eliminan aquellas columnas que no aporten información (aquellas qu
 cols_sin_informacion <- encuestas |> 
   summarise(across(everything(), n_distinct)) |>  
   pivot_longer(cols = everything()) |>  
-  filter(value==1) |>  select(name) |>  
+  filter(value==1) |>  
+  select(name) |>  
   pull()
 
 encuestas |>  
@@ -607,7 +615,7 @@ encuestas <- encuestas |>
                           # FRONT PEL PAIS VALENCIA-ERC --> ERC
                           # https://www.vilaweb.cat/noticia/1142933/20000710/front-pais-valencia-fusionara-erc.pdf
                           str_detect(str_to_upper(partido_politico), "EH|EUSKO|ARALAR") | 
-                            str_detect(str_to_upper(partido_politico), "EH|EUSKO|ARALAR|EH-BILDU")~ "EH - BILDU",
+                            str_detect(str_to_upper(partido_politico), "EH|EUSKO|ARALAR|EH-BILDU") ~ "EH - BILDU",
                           str_detect(str_to_upper(stringi::stri_trans_general(partido_politico, id = "Latin-ASCII")), "MAS PAIS|MP") ~ "MÁS PAÍS",
                           str_detect(str_to_upper(partido_politico), "VOX") ~ "VOX",
                           TRUE ~ "Otros")) 
@@ -702,7 +710,7 @@ maestra_censo <- datos_elecciones |> distinct(fecha, cod_mun, censo) |> summaris
 
 # Total de votos por sigla en cada uno de las fechas (agupamos todos los votos de todos los municipios)
 data_1 <- datos_elecciones |>
-  summarise(votos=sum(votos), .by = c(fecha, siglas,color_politico)) |> 
+  summarise(votos=sum(votos), .by = c(fecha, siglas, color_politico)) |> 
   left_join(maestra_censo, by = "fecha")
   # left_join(datos_elecciones |> distinct(fecha, cod_mun, censo) |> summarise(censo=sum(censo), .by = fecha), by = "fecha")
 
@@ -949,7 +957,8 @@ mas_votado1 |> select(fecha, cod_mun, siglas, posicion) |>
 ```
 
 ```{r}
-mas_votado1 |> filter(fecha=="2008-03" & cod_mun=="01-18-094")
+mas_votado1 |> 
+  filter(fecha == "2008-03" & cod_mun == "01-18-094")
 ```
 
 Igual que hemos visto casos donde primer y segundo puesto estaban empatados, merece la pena mirar dónde esa diferencia es máxima. Solo nos enfocaremos en los municipios donde el censo sea alto, pongamos un marco de 2.000 censados en adelante, ya que en municipios con pocos censados electorales la diferencia entre primer y segundo partido serán muy pequeñas y esto nos puede dar una distribución de la variable "diferencia entre primer y segundo partido más votado" con una cola izquierda muy pesada.
@@ -1135,7 +1144,7 @@ datos_porcentaje_voto <- datos_elecciones |> distinct(fecha,cod_mun,municipio,co
 plot1 <- datos_porcentaje_voto |>  
   mutate(censo_quantile = ntile(censo , 10)) |> 
   summarise(p_voto=mean(p_voto), .by = censo_quantile) |> 
-  ggplot()+
+  ggplot() +
   tema_7 +
   geom_col(aes(x=censo_quantile, y=p_voto, fill = "#e3005a"), show.legend = FALSE) +
   scale_fill_manual(values = "#e3005a") +
@@ -1162,7 +1171,7 @@ datos_porcentaje_voto |>
   summarise(p_votos_nulos=mean(p_votos_nulos), .by = c(censo_quantile,fecha)) |> 
   ggplot()+
   tema_7 +
-  geom_col(aes(x=censo_quantile, y=p_votos_nulos, fill = fecha), alpha = 0.8, show.legend = FALSE)+
+  geom_col(aes(x = censo_quantile, y = p_votos_nulos, fill = fecha), alpha = 0.8, show.legend = FALSE)+
   facet_wrap(~fecha)+
   scale_fill_manual(values = colores) +
   scale_x_continuous(breaks = c(1:10)) +
@@ -1177,7 +1186,9 @@ Aunque a mayor censo electoral el porcentaje de voto es menor, el porcentaje de 
 
 ```{r}
 #| collapse: true
-datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> slice_max(votos_nulos, n=5)
+datos_porcentaje_voto |> 
+  select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> 
+  slice_max(votos_nulos, n=5)
 datos_porcentaje_voto |> select(fecha, cod_mun, municipio, censo, votos_nulos, p_votos_nulos) |> slice_max(p_votos_nulos, n=5)
 ```
 
@@ -1275,33 +1286,11 @@ datos_porcentaje_voto |> mutate(censo_quantile = factor(ntile(censo , 20))) |>
 
 \newpage
 
+## Nivel de participación y favorecidos
 En toda elección surgen los rumores sobre si una baja participación favorece a la derecha o a la izquierda, para combatir a esos rumores analizaremos elección a elección los resultados y niveles de participación.
-
-# Mario: acá no sé como crear la leyenda para las lineas
-
-```{r}
-datos_elecciones |> summarise(votos=sum(votos), .by=c(fecha, cod_mun, censo, participacion_1, participacion_2)) |>
-  summarise(censo=sum(censo),
-            votos=sum(votos),
-            participacion_1=sum(participacion_1),
-            participacion_2=sum(participacion_2), .by=c(fecha)) |> 
-  mutate(p_votos=votos/censo, p_participacion_1=participacion_1/censo, p_participacion_2=participacion_2/censo) |> 
-  ggplot(aes(x=fecha))+
-  tema_7 +
-  geom_col(aes(y=censo))+
-  geom_line(aes(y = p_votos*(1/0.00000003)),group=1, color = "red")+
-  geom_line(aes(y = p_participacion_1*(1/0.00000003)),group=2, color = "blue")+
-  geom_line(aes(y = p_participacion_2*(1/0.00000003)),group=2, color = "green")+
-  labs(
-    title = "Distribución de participación según bloque horario",
-    y = "Censo electoral",
-    x = "Fecha elección"
-  )
-```
 
 Tras interiorizar las tendencias del porcentaje de votos en las distintas fechas, ¿vemos cambios en los resultados electores según el porcentaje de voto?
 
-# Mario: Esto está repetido? no lo entiendo
 
 ```{r}
 datos_participacion_fecha <- datos_elecciones |> summarise(votos=sum(votos), .by=c(fecha, cod_mun, censo, participacion_1, participacion_2)) |>
@@ -1317,7 +1306,13 @@ datos_participacion_fecha |>
   geom_line(aes(y = p_votos*(1/0.00000003)),group=1, color = "red")+
   geom_line(aes(y = p_participacion_1*(1/0.00000003)),group=2, color = "blue")+
   geom_line(aes(y = p_participacion_2*(1/0.00000003)),group=2, color = "green") +
-  tema_7
+  tema_7 +
+  labs(
+    title = "Distribución de participación según bloque horario",
+    y = "Censo electoral",
+    x = "Fecha elección",
+    caption = "Rojo: participación final | Azul: participación al primer avance | Verde: participación al segundo avance"
+  )
 ```
 
 ```{r}
@@ -1370,39 +1365,27 @@ datos_participacion_municipio |>
 # datos_participacion_municipio |> mutate(siglas_ganador = fct_reorder(siglas_ganador, p_votos)) %>%
 datos_elecciones_maestra |>
   left_join(mas_votado1 |> select(fecha,cod_mun,siglas_ganador=siglas)) |>
-  summarise(censo=sum(censo),
-            votos=sum(votos),
-            participacion_1=sum(participacion_1),
-            participacion_2=sum(participacion_2), .by=c(cod_mun, siglas_ganador)) |> # aquí siglas_ganador es necesario porque a veces tenemos dos ganadores en un municipio-fecha, sino sería c(cod_mun, fecha)
-  mutate(p_votos=votos/censo, p_participacion_1=participacion_1/censo, p_participacion_2=participacion_2/censo) |> pivot_longer(cols = c(p_votos, p_participacion_1, p_participacion_2)) |> 
-  ggplot( aes(x=name, y=value)) +
+  pivot_longer(cols = c(p_votos, p_participacion_1, p_participacion_2)) |> 
+  ggplot(aes(x=name, y=value)) +
   geom_boxplot()+
   facet_wrap(.~siglas_ganador) +
   coord_flip()+
-  tema_7
+  tema_7+
+  labs(
+    title = "Participación por bloque horario según partido ganador",
+    x = "Valor",
+    y = "Participación"
+  )
 ```
 
-```{r}
-#| eval: false
-# no me sale. y lo más parecido que sale no da los resultados que quería
-# Otra opción es sacar datos a nivel fecha-municipio, ordenarlos por p_votos y colorearlo por el color político del ganador, ¿habría una tendencia o conglomerado de colores por p_votos? Hacerlo también por centiles.
-
-datos_participacion_fecha_municipio <- datos_elecciones |> distinct(fecha, cod_mun, censo, participacion_1, participacion_2, votos_blancos, votos_nulos, votos_candidaturas) |>   mutate(votos=votos_blancos+votos_nulos+votos_candidaturas) |> mutate(censo_quantile = ntile(censo , 10)) |>
-    mutate(p_votos=votos/censo, p_participacion_1=participacion_1/censo, p_participacion_2=participacion_2/censo)|>
-  left_join(mas_votado1 |> select(fecha,cod_mun,siglas_ganador=siglas)) |> mutate(p_votos_quantile = ntile(p_votos , 10)) |> select(fecha, cod_mun, p_votos, siglas_ganador) |> arrange(-p_votos)
-
-datos_participacion_fecha_municipio
-
-datos_participacion_fecha_municipio |> 
-  ggplot()+
-  geom_col(aes(x=p_votos_quantile, y=n)) +
-  tema_7
-```
 
 ```{r}
 # Otra opción es sacar datos a nivel fecha-municipio, ordenarlos por p_votos y colorearlo por el color político del ganador, ¿habría una tendencia o conglomerado de colores por p_votos? Hacerlo también por centiles.
 
-datos_participacion_fecha_municipio <- datos_elecciones |> distinct(fecha, cod_mun, censo, participacion_1, participacion_2, votos_blancos, votos_nulos, votos_candidaturas) |>   mutate(votos=votos_blancos+votos_nulos+votos_candidaturas) |> mutate(censo_quantile = ntile(censo , 10)) |>
+datos_participacion_fecha_municipio <- datos_elecciones |> 
+  distinct(fecha, cod_mun, censo, participacion_1, participacion_2, votos_blancos, votos_nulos, votos_candidaturas) |> 
+  mutate(votos=votos_blancos+votos_nulos+votos_candidaturas) |> 
+  mutate(censo_quantile = ntile(censo , 10)) |>
     mutate(p_votos=votos/censo, p_participacion_1=participacion_1/censo, p_participacion_2=participacion_2/censo)|>
   left_join(mas_votado1 |> select(fecha,cod_mun,siglas_ganador=siglas)) |> 
   summarise(n=n(),
@@ -1742,7 +1725,7 @@ data_1 |>
   tema_7 +
   geom_hline(yintercept = mean(participacion$participacion)*(1/0.00000003), 
              linetype = "dashed", color = "white", linewidth = 0.5) +
-  geom_line(aes(y = p_votos*(1/0.00000003)),group = 1, color = "#e3005a") +
+  geom_line(aes(y = p_votos*(1/0.00000003)), group = 1, color = "#e3005a") +
   scale_y_continuous(name = "Número de votos", sec.axis = sec_axis(~.*0.00000003, name = "Participación (%)")) +
   scale_y_break(c(500000, 20000000)) +
   labs(
@@ -1751,26 +1734,30 @@ data_1 |>
   )
 ```
 
+
 El número de censados aumenta y la participación parece que va a la baja, aunque con seis evaluaciones no se puede afirmar con seguridad. Al comienzo de 2019 hay un repunte de la participación, pero de nuevo vuelve a bajar, posiblemente por el "aburrimiento" de volver a votar en ese mismo año.
 
 \newpage
 
+## Peso de no votantes versus el total de votos
 Miramos el peso que han tenido las personas censadas que no han votado versus el total de votos por cada una de las elecciones.
 
-# Mario Esto estaba tirando error por el gif
 
 ```{r}
-#| eval: false
-#gif_image <- image_read("https://raw.githubusercontent.com/MarioC0093/Software_GRUPAL_7/main/desarrollo_Mario/votar.gif") |>  image_scale("150")
 
-# fig <- image_graph(width = 300, height = 400)
-#fig <- image_graph()
+gif_image <- image_read("https://raw.githubusercontent.com/MarioC0093/Software_GRUPAL_7/main/Versiones%20finales/imagenes/votar.gif") |>  image_scale("150")
+
+fig <- image_graph(width = 300, height = 400)
+fig <- image_graph()
 
 data_1 |> summarise(votos=sum(votos),.by=c(fecha, censo)) |> mutate(no_votos=censo-votos) |>
   pivot_longer(cols = c(votos, no_votos), names_to = "tipo_voto") |> 
   ggplot() +
   geom_col(aes(x=fecha, y=value, fill=tipo_voto), position = "fill")+
-  tema_7
+  tema_7 +
+  labs(title = "Porcentaje de participación respecto al censo electoral",
+       x = "Fecha elección",
+       y = "Valor relativo")
 
 
 # Composing the full image
@@ -1948,10 +1935,6 @@ En base a lo anterior, se puede evidenciar que la baja participación, que ocurr
 \newpage
 
 # Encuestas
-
-## MARIO CHEQUEA PORFA QUE PASA CON LAS SIGLAS DE LAS ENCUESTAS ¿PARECE QUE IU DEBERÍA UNIRSE A UP?
-
-## Una vez tengamos eso hay que hacer el factor de las siglas de nuevo, porque otros queda raro
 
 Desde 2008 a 2019 se han realizado `r encuestas |> distinct(pollster) |> nrow()` encuestas, con valores muestrales que van desde `r encuestas |>  summarise(min(size)) |> pull()` a `r encuestas |>  summarise(max(size)) |> pull()` personas.
 
