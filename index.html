@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script src="Entrega_grupo7.2_files/libs/clipboard/clipboard.min.js"></script>
-<script src="Entrega_grupo7.2_files/libs/quarto-html/tabby.min.js"></script>
-<script src="Entrega_grupo7.2_files/libs/quarto-html/popper.min.js"></script>
-<script src="Entrega_grupo7.2_files/libs/quarto-html/tippy.umd.min.js"></script>
-<link href="Entrega_grupo7.2_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="Entrega_grupo7.2_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="Entrega_grupo7.2_files/libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
-<link href="Entrega_grupo7.2_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/tabby.min.js"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
   <meta name="generator" content="quarto-1.3.450">
 
   <meta name="author" content="Mario Camacho, Diana Cáceres, Vicente Pantoja">
@@ -15,8 +15,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
-  <link rel="stylesheet" href="Entrega_grupo7.2_files/libs/revealjs/dist/reset.css">
-  <link rel="stylesheet" href="Entrega_grupo7.2_files/libs/revealjs/dist/reveal.css">
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/reveal.css">
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -95,11 +95,11 @@
     code span.vs { color: #20794d; } /* VerbatimString */
     code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="Entrega_grupo7.2_files/libs/revealjs/dist/theme/quarto.css">
-  <link href="Entrega_grupo7.2_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
-  <link href="Entrega_grupo7.2_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
-  <link href="Entrega_grupo7.2_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
-  <link href="Entrega_grupo7.2_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/theme/quarto.css">
+  <link href="index_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="index_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="index_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="index_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
   <style type="text/css">
 
   .callout {
@@ -625,8 +625,8 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
  ungroup(summarise(sample_1, votos = sum(votos), .by = everything()[!everything() %in%      c("votos")]))
             ungroup(distinct(mutate(sample_1, votos = sum(votos), .by = c(fecha,      cod_mun, siglas))))
      min      lq    mean  median      uq     max neval
- 43.4022 43.4022 43.4022 43.4022 43.4022 43.4022     1
- 49.6740 49.6740 49.6740 49.6740 49.6740 49.6740     1</code></pre>
+ 45.4455 45.4455 45.4455 45.4455 45.4455 45.4455     1
+ 51.6423 51.6423 51.6423 51.6423 51.6423 51.6423     1</code></pre>
 </div>
 </div>
 <p>De acuerdo a la simulación realizada, se concluye que la función summarise permite realizar el desarrollo en un tiempo menor.</p>
@@ -640,7 +640,7 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <p>Se crea un dataset con información a nivel municipio con el identificador de este y datos de censo electoral, número de mesas electorales y participación para cada fecha.</p>
 <p>Para algunas variables numéricas se hace una trasformación logarítma debido a su gran dispersión. Las variables calculadas en porcentajes tiene valores extremos que en realidad son datos incoherentes (mayor número de votos que censados).</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-19-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-19-1.png" width="960" class="r-stretch"></section>
 <section id="limpieza-de-datos-1" class="slide level2">
 <h2>Limpieza de datos</h2>
 <p>También se encuentran datos de participación erróneos como:</p>
@@ -838,7 +838,7 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 </div>
 </div>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-29-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-29-1.png" width="960" class="r-stretch"></section>
 <section id="encuestas" class="slide level2">
 <h2>ENCUESTAS</h2>
 <ul>
@@ -986,22 +986,22 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <p>El número de votos siempre se ha mantenido por encima de 23754401 votos pero, ¿cuánto ha supuesto este número de votos sobre el total de la población?</p>
 <p>Comparando la participación con el censo para cada una de las elecciones:</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-39-1.png" width="960" class="r-stretch"><p>El número de censados aumenta y la participación parece que va a la baja, aunque con seis evaluaciones no se puede afirmar con seguridad. Al comienzo de 2019 hay un repunte de la participación, pero de nuevo vuelve a bajar, posiblemente por el “aburrimiento” de volver a votar en ese mismo año.</p>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-39-1.png" width="960" class="r-stretch"><p>El número de censados aumenta y la participación parece que va a la baja, aunque con seis evaluaciones no se puede afirmar con seguridad. Al comienzo de 2019 hay un repunte de la participación, pero de nuevo vuelve a bajar, posiblemente por el “aburrimiento” de volver a votar en ese mismo año.</p>
 </section>
 <section id="peso-de-no-votantes-versus-el-total-de-votos" class="slide level2">
 <h2>Peso de no votantes versus el total de votos</h2>
 <p>Miramos el peso que han tenido las personas censadas que no han votado versus el total de votos por cada una de las elecciones.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-40-1.gif" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-40-1.gif" class="r-stretch"></section>
 <section id="peso-de-no-votantes-versus-el-total-de-votos-1" class="slide level2">
 <h2>Peso de no votantes versus el total de votos</h2>
 <p>Al igual que al inicio veíamos los votos recibidos por cada partida, ahora incluímos ese <em>no voto</em> como una representatividad más.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-41-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-41-1.png" width="960" class="r-stretch"></section>
 <section id="peso-de-no-votantes-versus-el-total-de-votos-2" class="slide level2">
 <h2>Peso de no votantes versus el total de votos</h2>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-43-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-43-1.png" width="960" class="r-stretch"></section>
 <section id="distribución-de-votos" class="slide level2">
 <h2>Distribución de votos</h2>
 <div class="columns">
@@ -1012,14 +1012,14 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 </div>
 </div>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-44-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-44-1.png" width="960" class="r-stretch"></section>
 <section id="votaciones-en-municipios-con-mayor-censo" class="slide level2">
 <h2>Votaciones en municipios con mayor censo</h2>
 <p>Se trata de 48 municipios con más de 100.000 censados.</p>
 <p>Vemos la distribucion del total de votos en estos municipios en cada una de las elecciones.</p>
 <p>El peso de los partidos de ámbito nacional se mantiene.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-46-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-46-1.png" width="960" class="r-stretch"></section>
 <section id="votaciones-en-municipios-con-mayor-censo-1" class="slide level2">
 <h2>Votaciones en municipios con mayor censo</h2>
 <p>Misma representación para los 48 municipios con más de 100.000 censados pero a nivel de partido político y no en función del ámbito.</p>
@@ -1027,7 +1027,7 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <div class="column" style="width:70%;">
 <div class="cell">
 <div class="cell-output-display">
-<p><img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-48-1.png" width="960"></p>
+<p><img data-src="index_files/figure-revealjs/unnamed-chunk-48-1.png" width="960"></p>
 </div>
 </div>
 </div><div class="column" style="width:30%;">
@@ -1116,22 +1116,22 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <h2>Partido ganador por elección</h2>
 <p>Vemos la relación entre el partido más votado y el segundo, teniendo en cuenta todos los municipios para todas las elecciones. Visualmente se aprecia que cuando el PP queda en primer lugar el partido que más veces está en segundo puesto es el PSOE. Y viceversa. Cuando el PSOE ocupa la primera posición en votos el partido que más veces está tras él es el PP.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-53-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-53-1.png" width="960" class="r-stretch"></section>
 <section id="partido-ganador-por-elección-2" class="slide level2">
 <h2>Partido ganador por elección</h2>
 <p>Vemos un pequeño flujo residual que va de PSOE en primera posición a PSOE en segunda posición. Esto se debe a los casos de empate en el partido más votado donde decidíamos poner a ambos partidos como primer y segundo partido más votado.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-54-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-54-1.png" width="960" class="r-stretch"></section>
 <section id="bipartidismo" class="slide level2">
 <h2>Bipartidismo</h2>
 <p>Al momento de comparar la primera votación con la última reportada, podemos evidenciar que la tendencia bipartidista ha decrecido, en parte por la aparición de nuevos partidos y tendencias políticas</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-55-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-55-1.png" width="960" class="r-stretch"></section>
 <section id="bipartidismo-1" class="slide level2">
 <h2>Bipartidismo</h2>
 <p>Al momento de comparar la primera votación con la última reportada, podemos evidenciar que la tendencia bipartidista ha decrecido, en parte por la aparición de nuevos partidos y tendencias políticas</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-56-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-56-1.png" width="960" class="r-stretch"></section>
 <section id="diferencias-entre-primer-y-segundo-partido" class="slide level2">
 <h2>Diferencias entre primer y segundo partido</h2>
 <div class="columns">
@@ -1266,12 +1266,12 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <h2>Diferencias entre primer y segundo partido</h2>
 <p>Vemos la distribución de votos para los registros con censo mayor a 2.000 y la distribución de la diferencia de votos para estos mismos municipios.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-62-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-62-1.png" width="960" class="r-stretch"></section>
 <section id="diferencias-entre-primer-y-segundo-partido-4" class="slide level2">
 <h2>Diferencias entre primer y segundo partido</h2>
 <p>La distribución del logaritmo de la diferencia de votos sigue una distribución normal y mucho más visual que la distribucion original que nos permite la búsqueda de outliers.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-63-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-63-1.png" width="960" class="r-stretch"></section>
 <section id="diferencias-entre-primer-y-segundo-partido-5" class="slide level2">
 <h2>Diferencias entre primer y segundo partido</h2>
 <p>Para determinar los municipios-fecha con mayor diferencia de voto podemos medir esta diferencia de forma absoluta o de forma relativa.</p>
@@ -1282,7 +1282,7 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 </ul>
 <p>Esta segunda forma relativiza la diferencia de votos en función del tamaño de la muestra. Ya que en municipios con mayor censo se espera mayor diferencia en votos.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-64-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-64-1.png" width="960" class="r-stretch"></section>
 <section id="diferencias-entre-primer-y-segundo-partido-6" class="slide level2">
 <h2>Diferencias entre primer y segundo partido</h2>
 <div class="columns">
@@ -1377,7 +1377,7 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <p>A mayor censo electoral el porcentaje de voto es menor, pero el porcentaje de votos nulos no parece seguir ninguna tendencia en función del censo.</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-70-1.png" width="960"></p>
+<p><img data-src="index_files/figure-revealjs/unnamed-chunk-70-1.png" width="960"></p>
 </div>
 </div>
 </div><div class="column" style="width:50%;">
@@ -1419,26 +1419,26 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <p>Vemos la distribución censal por cuantil y el porcentaje medio de participación, dividido por el porcentaje de votos a las candidaturas, de votos en blanco y de votos nulos (porcentajes medidos como votos -de esas tres categorías- sobre el censo).</p>
 <p>La participación baja según aumenta el censo en las poblaciones, pero el porcentaje de votos nulos no sigue esa distribución.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-73-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-73-1.png" width="960" class="r-stretch"></section>
 <section id="nivel-de-participación-y-favorecidos-1" class="slide level2">
 <h2>Nivel de participación y favorecidos</h2>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-74-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-74-1.png" width="960" class="r-stretch"></section>
 <section id="nivel-de-participación-y-favorecidos-2" class="slide level2">
 <h2>Nivel de participación y favorecidos</h2>
 <p>Se aprecia que en las comunidades 09, 13 y 14 la distribución de votos se la llevan partidos políticos que no responden al bipartidismo</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-75-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-75-1.png" width="960" class="r-stretch"></section>
 <section id="nivel-de-participación-y-favorecidos-3" class="slide level2">
 <h2>Nivel de participación y favorecidos</h2>
 <p>En las elecciones se suele especular con que si una alta/baja participación a cierre de urnas o en alguno de los avances favorece a unos bloques políticos u otros. Analizaremos para cada elección los resultados y niveles de participación en cada municipio.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-76-1.png" width="960" class="r-stretch"></section></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-76-1.png" width="960" class="r-stretch"></section></section>
 <section id="encuestas-1" class="title-slide slide level1 center">
 <h1>Encuestas</h1>
 <p>Desde 2008 a 2019 se han realizado 45 encuestas, con valores muestrales que van desde 750 a 45635 personas.</p>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-77-1.png" width="960" class="r-stretch"></section>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-77-1.png" width="960" class="r-stretch"></section>
 
 <section>
 <section id="encuestas-2" class="title-slide slide level1 center">
@@ -1446,10 +1446,10 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <p>Dado que cada votación y cada encuesta presenta valores diferentes, esto las vuelve poco calibrables para los gestores de datos, se vuelve necesario hacer un análisis al detalle de cada elección para calibrar cada una de ellas.</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-78-1.png" width="960"></p>
+<p><img data-src="index_files/figure-revealjs/unnamed-chunk-78-1.png" width="960"></p>
 </div>
 <div class="cell-output-display">
-<p><img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-78-2.png" width="960"></p>
+<p><img data-src="index_files/figure-revealjs/unnamed-chunk-78-2.png" width="960"></p>
 </div>
 </div>
 <p></p>
@@ -1457,19 +1457,19 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
 <section id="encuestas-menos-precisas" class="slide level2">
 <h2>Encuestas menos precisas</h2>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-79-1.png" width="960" class="r-stretch"><p>Las encuestas se equivocaron más en la elección del 2011-11, seguida del 2016-06 y 2019-11. Curiosamente en las elecciones de 2019-04 el promedio de las encuestas estuvo bastante cerca del resultado final.</p>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-79-1.png" width="960" class="r-stretch"><p>Las encuestas se equivocaron más en la elección del 2011-11, seguida del 2016-06 y 2019-11. Curiosamente en las elecciones de 2019-04 el promedio de las encuestas estuvo bastante cerca del resultado final.</p>
 <p></p>
 </section>
 <section id="error-de-encuestas-en-partidos-de-ámbito-nacional" class="slide level2">
 <h2>Error de encuestas en partidos de ámbito nacional</h2>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-80-1.png" width="960" class="r-stretch"><p>Se evidencia que las encuestas previeron resultados disímiles respecto a los partidos de ámbito nacional, como aquellas del 2019, donde al PSOE lo subestiman en abril y luego lo sobrestiman en noviembre, caso contrario para el PP en el mismo rango.</p>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-80-1.png" width="960" class="r-stretch"><p>Se evidencia que las encuestas previeron resultados disímiles respecto a los partidos de ámbito nacional, como aquellas del 2019, donde al PSOE lo subestiman en abril y luego lo sobrestiman en noviembre, caso contrario para el PP en el mismo rango.</p>
 <p></p>
 </section>
 <section id="casas-encuestadoras" class="slide level2">
 <h2>Casas encuestadoras</h2>
 
-<img data-src="Entrega_grupo7.2_files/figure-revealjs/unnamed-chunk-81-1.png" width="960" class="r-stretch"><p>Se puede apreciar que las casas CIS, ENCUESTAMOS y MYWORD presentan los rangos más amplios de resultados, y CELESTE-TEL la que presenta más outliers.</p>
+<img data-src="index_files/figure-revealjs/unnamed-chunk-81-1.png" width="960" class="r-stretch"><p>Se puede apreciar que las casas CIS, ENCUESTAMOS y MYWORD presentan los rangos más amplios de resultados, y CELESTE-TEL la que presenta más outliers.</p>
 </section></section>
 <section id="fin" class="title-slide slide level1 center">
 <h1>FIN</h1>
@@ -1481,19 +1481,19 @@ Mario Camacho, Diana Cáceres, Vicente Pantoja
   </div>
 
   <script>window.backupDefine = window.define; window.define = undefined;</script>
-  <script src="Entrega_grupo7.2_files/libs/revealjs/dist/reveal.js"></script>
+  <script src="index_files/libs/revealjs/dist/reveal.js"></script>
   <!-- reveal.js plugins -->
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  <script src="index_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="index_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="index_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="index_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="index_files/libs/revealjs/plugin/quarto-support/support.js"></script>
   
 
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/notes/notes.js"></script>
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/search/search.js"></script>
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/zoom/zoom.js"></script>
-  <script src="Entrega_grupo7.2_files/libs/revealjs/plugin/math/math.js"></script>
+  <script src="index_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="index_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="index_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="index_files/libs/revealjs/plugin/math/math.js"></script>
   <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
 
   <script>
