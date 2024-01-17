@@ -44,10 +44,10 @@ library(outliers)
 ```{r}
 # NO TOQUES NADA
 #| echo: true
-datos_elecciones <- read_csv(file = "./datos/datos_elecciones_brutos.csv")
-cod_mun <- read_csv(file = "./datos/cod_mun.csv")
-encuestas <- read_csv(file = "./datos/historical_surveys.csv")
-siglas <- read_csv(file = "./datos/siglas.csv")
+datos_elecciones <- read_csv(file = "C:/Users/MarioC/Documents/Master_Bioestadistica/Software_23_24/GRUPAL/datos/datos_elecciones_brutos.csv")
+cod_mun <- read_csv(file = "C:/Users/MarioC/Documents/Master_Bioestadistica/Software_23_24/GRUPAL/datos/cod_mun.csv")
+encuestas <- read_csv(file = "C:/Users/MarioC/Documents/Master_Bioestadistica/Software_23_24/GRUPAL/datos/historical_surveys.csv")
+siglas <- read_csv(file = "C:/Users/MarioC/Documents/Master_Bioestadistica/Software_23_24/GRUPAL/datos/siglas.csv")
 
 #colores <- c("#76b3dd", "#FF0000", "#de6c25", "#FF5824", "#00bda1", "#ffbf41", "#E61455", 
 #             "#008135", "#F6350B", "#6D50B3", "#73B446", "#3399FF", "gray40")
